@@ -10,13 +10,13 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <util/delay.h>
-#include "state.h"
-#include "error.h"
-#define F_CPU 8000000
+#define F_CPU 16000000
 
-//function declarations
+//functrion declarations
 void initialiseAnalogComparator(void);
 void initialisePWMtimer(void);
+
+
 
 ISR(ANA_COMP0_vect)
 {
@@ -134,44 +134,5 @@ void initialisePWMtimer(void){
 	//set output compare A and B interrupt enable
 	//TIMSK2 |= (1<<OCIE2B); 
 	
-
-}
-
-State idle(){
-	return (State)idle;
-
-}
-
-State receiveData(){
-	return (State)receiveData;
-}
-
-State start(){
-	return (State)start;
-}
-
-State changeDirection(){
-	return (State)changeDirection;
-}
-
-State adjustSpeed(){
-	return (State)controlSpeed;
-}
-
-State controlSpeed(){
-	return (State)controlSpeed;
-}
-
-State fanLocked(){
-	return (State)sendStatus;
-}
-
-State blockedDuct(){
-	return (State)sendStatus;
-
-}
-
-State sendStatus(){
-	return (State)controlSpeed;
 
 }
