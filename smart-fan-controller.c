@@ -20,7 +20,7 @@
 void initialiseAnalogComparator(void);
 void initialisePWMtimer(void);
 
-double dutyCycle = 0.8;
+double dutyCycle = 0.6;
 
 ISR(ANA_COMP0_vect)
 {
@@ -31,10 +31,6 @@ ISR(ANA_COMP0_vect)
 	TOCPMCOE ^= (1<<TOCC3OE);
 	TOCPMCOE ^= (1<<TOCC5OE);
 
-	//toggle between PWM mux
-	//TOCPMSA0 |= (1<<TOCC3S1);
-	//TOCPMSA1 |= (1<<TOCC5S1);
-
 	//toggle between rising and falling
 	ACSR0A ^= (1<<ACIS00);
 
@@ -42,7 +38,7 @@ ISR(ANA_COMP0_vect)
 	ACSR0A |= (1<<ACIE0);
 }
 
-int main(void)
+int main(void)	
 {
 	// PIN B0 B1 is output 2x LED's
 	DDRB |= (1<<DDB0);
@@ -90,7 +86,6 @@ void initialisePWMtimer(void){
 	//initialize variables
 	unsigned int prescaler = 1;
 	uint16_t top = (F_CPU/(prescaler*F_PWM)) - 1;
-	double dutyCycle = 0.5;
 	uint16_t compareCount = dutyCycle*top;
 	
 	//configure data direction register channel 0 as output "PA2" - port A1
