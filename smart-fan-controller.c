@@ -216,13 +216,11 @@ void initialiseADC(void) {
 	//Gain Selection (Gain of 20)
 	ADMUXB |= (1<<GSEL0);
 
-	//Enable ADC, Start ADC Conversion, Enable ADC Interrupt, ADC Pre-scaler (divide by 64), Enable ADC Interrupt
-	ADCSRA |= (1<<ADEN) | (1<<ADSC) | (1<<ADIE) | (1<<ADPS1) | (1<<ADPS2) | (1<<ADATE);
+	//Enable ADC, Enable ADC Interrupt, Enable ADC Auto Trigger Enable, ADC Pre-scaler (divide by 64),
+	ADCSRA |= (1<<ADEN) | (1<<ADIE) | (1<<ADATE) | (1<<ADPS1) | (1<<ADPS2);
 
 	//Start ADC Conversion when Timer0 overflows
 	ADCSRB |= (1<<ADTS2);
-
-
 
 }
 
@@ -231,10 +229,19 @@ uint16_t getADCValue(uint8_t ADC_channel){
 //Clearing the register to select right channel
 ADMUXA &= ~(ADMUXA);
 
-//Reading from ADC Channel 11
-//ADMUXA |= (1 << MUX0) | (1 << MUX1) | (1 << MUX3);
+//Reading from ADC_channel
+ADMUXA = ADC_channel;
 
+//Start ADC Conversion 
+ADCSRA |= (1<<ADSC);
 
+//Break out of loop only when conversion complete
+while(!(ADCSRA & (1<<ADIF))){}
+
+//Clear the ADIF control bit
+ADCSRA |= (1<<ADIF);
+
+return ADC;
 
 }
 
