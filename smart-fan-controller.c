@@ -23,6 +23,8 @@ void initialiseAnalogComparator(void);
 void initialisePWMtimer(void);
 void calculateSpeed(int speedTimerCount);
 void intialiseSpeedTimer(void);
+void initialiseADC(void);
+
 int poleCount = 0;
 double dutyCycle = 0.7;
 
@@ -62,11 +64,20 @@ ISR(ANA_COMP0_vect)
 
 }
 
+ISR()
+{
+
+
+
+}
+
 int main(void)	
 {
 	// PIN B0 B1 is output 2x LED's
 	DDRB |= (1<<DDB0);
 	DDRB |= (1<<DDB1);
+
+	DDRB |
 	
 	//initialize PWM timer
 	initialisePWMtimer();
@@ -77,6 +88,9 @@ int main(void)
 
 	//initialize Analog Comparator
 	initialiseAnalogComparator();
+
+	//initialise ADC
+	initialiseADC();
 
 	//clear port B
 	PORTB &= ~(PORTB);
@@ -175,6 +189,51 @@ void initialisePWMtimer(void){
 }
 
 void calculateSpeed(int speedTimerCount){
+
+
+}
+
+void initialiseADC(void) {
+
+	//Initialise DDRB
+	DDRB |= (0<<PORTB0) | (0<<PORTB3);
+
+	//Clear Registers
+	ADCSRA &= ~(ADCSRA);
+	ADCSRB &= ~(ADCSRB);
+	ADMUXA &= ~(ADMUXA);
+	ADMUXB &= ~(ADMUXB);
+		
+	//Clears Power Reduction Register
+	PRR &= ~(1<<PRADC);
+
+	//Disable Digital Input
+	DIDR1 |= (1<<ADC11D);
+
+	//Reference Voltage Selection (VCC)
+	ADMUXB &= ~(ADMUXB);
+
+	//Gain Selection (Gain of 20)
+	ADMUXB |= (1<<GSEL0);
+
+	//Enable ADC, Start ADC Conversion, Enable ADC Interrupt, ADC Pre-scaler (divide by 64), Enable ADC Interrupt
+	ADCSRA |= (1<<ADEN) | (1<<ADSC) | (1<<ADIE) | (1<<ADPS1) | (1<<ADPS2) | (1<<ADATE);
+
+	//Start ADC Conversion when Timer0 overflows
+	ADCSRB |= (1<<ADTS2);
+
+
+
+}
+
+uint16_t getADCValue(uint8_t ADC_channel){
+
+//Clearing the register to select right channel
+ADMUXA &= ~(ADMUXA);
+
+//Reading from ADC Channel 11
+//ADMUXA |= (1 << MUX0) | (1 << MUX1) | (1 << MUX3);
+
 
 
 }
