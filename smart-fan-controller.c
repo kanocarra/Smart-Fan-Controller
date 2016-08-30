@@ -6,17 +6,16 @@
  */ 
 
 #include <avr/io.h>
-#define F_CPU 8000000
-#define F_PWM 18000
+#define F_CPU 8000000UL
+#define F_PWM 18000UL
+#define BAUD 9600UL
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <util/delay.h>
 #include <stdio.h> 
 
-
 #include "state.h"
 #include "error.h"
-#define F_CPU 8000000
 
 //function declarations
 void initialiseAnalogComparator(void);
@@ -24,6 +23,8 @@ void initialisePWMtimer(void);
 void calculateSpeed(int speedTimerCount);
 void intialiseSpeedTimer(void);
 void initialiseADC(void);
+void UART_Init(unsigned int UBRR_VAL);
+void UART_Transmit(uint8_t TX_data);
 
 int poleCount = 0;
 double dutyCycle = 0.7;
@@ -47,13 +48,12 @@ ISR(ANA_COMP0_vect)
 
 	if (poleCount == 6){
 		int speedTimerCount;
-		/// WAIT until capture is triggered
-		//while(~(TIFR1 & (1<<ICF1)));
-		
 		//Capture the count value stored in Input Capture Register
 		speedTimerCount = ICR1;
 		intialiseSpeedTimer();
-		printf("Time = %i", speedTimerCount);
+		uint8_t tx_data = speedTimerCount % 255;
+		UART_Transmit(tx_data);
+		
 		//calculateSpeed(speedTimerCount);
 		poleCount = 0;
 		
@@ -61,28 +61,13 @@ ISR(ANA_COMP0_vect)
 
 	//Toggle between rising and falling 
 	TCCR1B ^= (1<<ICES1);
-
-}
-
-ISR()
-{
-
-
-
 }
 
 int main(void)	
-{
-	// PIN B0 B1 is output 2x LED's
-	DDRB |= (1<<DDB0);
-	DDRB |= (1<<DDB1);
-
-	DDRB |
-	
+{	
 	//initialize PWM timer
 	initialisePWMtimer();
 
-	printf("Hello World");
 	//initialise timer to calculate speed
 	intialiseSpeedTimer();
 
@@ -90,13 +75,16 @@ int main(void)
 	initialiseAnalogComparator();
 
 	//initialise ADC
-	initialiseADC();
+	//initialiseADC();
 
 	//clear port B
 	PORTB &= ~(PORTB);
 
 	//enable global interrupts
 	sei();
+
+	unsigned int ubrrValue = ((F_CPU)/(BAUD*16)) - 1;
+	UART_Init(ubrrValue);
 
 	//State currentState = idle;
 
@@ -234,7 +222,7 @@ ADMUXA &= ~(ADMUXA);
 //Reading from ADC Channel 11
 //ADMUXA |= (1 << MUX0) | (1 << MUX1) | (1 << MUX3);
 
-
+return 0;
 
 }
 
@@ -275,4 +263,32 @@ State blockedDuct(){
 State sendStatus(){
 	return (State)controlSpeed;
 
+}
+
+void UART_Init(unsigned int UBRR_VAL)
+{
+	// Setting the UBRR0 value using its High and Low registers
+	UBRR0H = (UBRR_VAL>>8);
+	UBRR0L = UBRR_VAL;
+	
+	// Enabling the USART receiver and transmitter
+	UCSR0B |= (1<<RXEN0) | (1<<TXEN0);
+	
+	// Define what kind of transmission we're using and how many
+	// start and stop bits we're using, as well as parity
+	UCSR0C |= (1<<UCSZ00) | (1<<UCSZ01);
+
+	REMAP |= (1<<U0MAP);
+}
+
+void UART_Transmit(uint8_t TX_data)
+{
+	// Check that the USART Data Register is empty, AND if UCSR0A
+	// is all 0s
+	while(!(UCSR0A & (1<<UDRE0)));
+	
+	// Since UDR is empty put the data we want to send into it,
+	// then wait for a second and send the following data
+	UDR0 = TX_data;
+	
 }
