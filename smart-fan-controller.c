@@ -7,10 +7,12 @@
 
 #include <avr/io.h>
 #define F_CPU 8000000
-#define F_PWM 20000
+#define F_PWM 18000
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <util/delay.h>
+#include <stdio.h> 
+
 
 #include "state.h"
 #include "error.h"
@@ -19,8 +21,10 @@
 //function declarations
 void initialiseAnalogComparator(void);
 void initialisePWMtimer(void);
-
-double dutyCycle = 0.6;
+void calculateSpeed(int speedTimerCount);
+void intialiseSpeedTimer(void);
+int poleCount = 0;
+double dutyCycle = 0.7;
 
 ISR(ANA_COMP0_vect)
 {
@@ -36,6 +40,26 @@ ISR(ANA_COMP0_vect)
 
 	//enable interrupts once service done
 	ACSR0A |= (1<<ACIE0);
+
+	poleCount++;
+
+	if (poleCount == 6){
+		int speedTimerCount;
+		/// WAIT until capture is triggered
+		//while(~(TIFR1 & (1<<ICF1)));
+		
+		//Capture the count value stored in Input Capture Register
+		speedTimerCount = ICR1;
+		intialiseSpeedTimer();
+		printf("Time = %i", speedTimerCount);
+		//calculateSpeed(speedTimerCount);
+		poleCount = 0;
+		
+	}
+
+	//Toggle between rising and falling 
+	TCCR1B ^= (1<<ICES1);
+
 }
 
 int main(void)	
@@ -47,6 +71,10 @@ int main(void)
 	//initialize PWM timer
 	initialisePWMtimer();
 
+	printf("Hello World");
+	//initialise timer to calculate speed
+	intialiseSpeedTimer();
+
 	//initialize Analog Comparator
 	initialiseAnalogComparator();
 
@@ -56,7 +84,10 @@ int main(void)
 	//enable global interrupts
 	sei();
 
+	//State currentState = idle;
+
 	while (1) {	
+		//currentState = (State)currentState();
 	}
 }
 
@@ -74,12 +105,34 @@ void initialiseAnalogComparator(void){
 	//enable output comparator
 	ACSR0B |= (1<<ACOE0);
 
-	//set rising edge
-	ACSR0A |= (1<<ACIS01) | (1<<ACIS00);
+	//set rising edge and input capture enable 
+	ACSR0A |= (1<<ACIS01) | (1<<ACIS00) | (1<<ACIC0);
 	
 	//initialise interrupt enable
 	ACSR0A |= (1<<ACIE0);
 }
+
+void intialiseSpeedTimer(void){
+
+	//Ensure counter is stopped
+	TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
+
+	//Disable all Timer1 Interrupt
+	TIMSK1 &= ~(1<<ICIE1) & ~(TOIE0);
+
+	//input capture enable
+	TCCR1B |= (1<<ICES1);
+
+	//Clearing input capture flag
+	TIFR1 |= (1<<ICF1);
+		
+	//Reset count
+	TCNT1 = 0x0000;
+
+	//Start the timer with no prescaler 
+	TCCR1B |= (1<< CS10);
+	
+	}
 
 void initialisePWMtimer(void){
 
@@ -118,6 +171,11 @@ void initialisePWMtimer(void){
 
 	//clk pre-scaler = 1 & start timer
 	TCCR2B |= (1<<CS20);
+
+}
+
+void calculateSpeed(int speedTimerCount){
+
 
 }
 
