@@ -23,6 +23,7 @@ void initialisePWMtimer(void);
 void calculateSpeed(int speedTimerCount);
 void intialiseSpeedTimer(void);
 void initialiseADC(void);
+uint16_t getADCValue(uint8_t ADC_channel);
 void UART_Init(unsigned int UBRR_VAL);
 void UART_Transmit(uint8_t TX_data);
 
@@ -51,8 +52,8 @@ ISR(ANA_COMP0_vect)
 		//Capture the count value stored in Input Capture Register
 		speedTimerCount = ICR1;
 		intialiseSpeedTimer();
-		uint8_t tx_data = speedTimerCount % 255;
-		UART_Transmit(tx_data);
+		//uint8_t tx_data = speedTimerCount % 255;
+		//UART_Transmit(tx_data);
 		
 		//calculateSpeed(speedTimerCount);
 		poleCount = 0;
@@ -75,7 +76,7 @@ int main(void)
 	initialiseAnalogComparator();
 
 	//initialise ADC
-	//initialiseADC();
+	initialiseADC();
 
 	//clear port B
 	PORTB &= ~(PORTB);
@@ -88,8 +89,15 @@ int main(void)
 
 	//State currentState = idle;
 
+	//uint16_t tx_data = 65536 - getADCValue(11);
+	//uint8_t tx1 = (tx_data>>8);
+	//uint8_t tx2 = tx_data;
+	//UART_Transmit(tx1);
+	//UART_Transmit(tx2);
+
 	while (1) {	
 		//currentState = (State)currentState();
+
 	}
 }
 
@@ -214,22 +222,22 @@ void initialiseADC(void) {
 
 uint16_t getADCValue(uint8_t ADC_channel){
 
-//Clearing the register to select right channel
-ADMUXA &= ~(ADMUXA);
+	//Clearing the register to select right channel
+	ADMUXA &= ~(ADMUXA);
 
-//Reading from ADC_channel
-ADMUXA = ADC_channel;
+	//Reading from ADC_channel
+	ADMUXA = ADC_channel;
 
-//Start ADC Conversion 
-ADCSRA |= (1<<ADSC);
+	//Start ADC Conversion 
+	ADCSRA |= (1<<ADSC);
 
-//Break out of loop only when conversion complete
-while(!(ADCSRA & (1<<ADIF))){}
+	//Break out of loop only when conversion complete
+	while(!(ADCSRA & (1<<ADIF))){}
 
-//Clear the ADIF control bit
-ADCSRA |= (1<<ADIF);
+	//Clear the ADIF control bit
+	ADCSRA |= (1<<ADIF);
 
-return ADC;
+	return ADC;
 
 }
 
