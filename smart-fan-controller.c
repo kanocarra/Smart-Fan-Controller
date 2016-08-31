@@ -14,6 +14,9 @@
 #define ADC_RESOLUTION 1024
 #define	ADC_V_CHANNEL 10
 #define ADC_I_CHANNEL 11
+#define VDR_R1 56
+#define VDR_R2 22
+#define VDR_R3 82
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <util/delay.h>
@@ -29,7 +32,7 @@ void calculateSpeed(uint16_t speedTimerCount);
 void intialiseSpeedTimer(void);
 void initialiseADCTimer(void);
 void initialiseADC(void);
-uint16_t getADCValue(uint8_t ADC_channel);
+float getADCValue(uint8_t ADC_channel);
 void getVoltage(void);
 void getCurrent(void);
 void UART_Init(unsigned int UBRR_VAL);
@@ -39,8 +42,8 @@ int poleCount = 0;
 double dutyCycle = 0.6;
 
 //Global Voltage and Current Variables
-uint8_t supplyVoltage;
-uint16_t shuntCurrent;
+float supplyVoltage;
+float shuntCurrent;
 
 ISR(ANA_COMP0_vect)
 {
@@ -99,15 +102,17 @@ int main(void)
 	getVoltage();
 	//getCurrent();
 
-	uint8_t txData;
-
+	uint8_t txData1;
+	//uint8_t txData2;
 	//State currentState = idle;
 	
 	//supplyVoltage is a 16 bit variable
 	//UART_Transmit(shuntCurrent);
 	while (1) {	
+
 		getVoltage();
-		UART_Transmit(supplyVoltage*10);
+		txData1 = (uint8_t)supplyVoltage;
+		UART_Transmit(txData1);
 		//currentState = (State)currentState();
 	}
 }
@@ -132,8 +137,6 @@ void initialiseAnalogComparator(void){
 	//initialise interrupt enable
 	ACSR0A |= (1<<ACIE0);
 }
-
-
 
 void intialiseSpeedTimer(void){
 	
@@ -224,9 +227,6 @@ void initialiseADC(void) {
 	//Reference Voltage Selection (VCC)
 	ADMUXB &= ~(ADMUXB);
 
-	//Gain Selection (Gain of 20)
-	//ADMUXB |= (1<<GSEL0);
-
 	//Enable ADC, Enable ADC Interrupt, Enable ADC Auto Trigger Enable, ADC Pre-scaler (divide by 64),
 	ADCSRA |= (1<<ADEN) | (1<<ADATE) | (1<<ADPS1) | (1<<ADPS2);
 
@@ -235,7 +235,7 @@ void initialiseADC(void) {
 
 }
 
-uint16_t getADCValue(uint8_t ADC_channel){
+float getADCValue(uint8_t ADC_channel){
 
 	//Clearing the register to select right channel
 	ADMUXA &= ~(ADMUXA);
@@ -258,14 +258,24 @@ uint16_t getADCValue(uint8_t ADC_channel){
 
 void getVoltage(void){
 
-	uint16_t ADC_Voltage = getADCValue(ADC_V_CHANNEL);
-	supplyVoltage = (ADC_Voltage * V_REF)/ADC_RESOLUTION;
+	//calculate gain
+	float gain = (VDR_R2 + VDR_R3)/(VDR_R1 + VDR_R2 + VDR_R3);
+	//calculate supply voltage 
+	float ADC_Voltage = getADCValue(ADC_V_CHANNEL);
+	supplyVoltage = (gain * ((ADC_Voltage * V_REF)/ADC_RESOLUTION)) * 10;
 
 }
 
 void getCurrent(void){
-	uint16_t ADC_ShuntVoltage = getADCValue(ADC_I_CHANNEL);
-	shuntCurrent = (ADC_ShuntVoltage * V_REF)/(ADC_RESOLUTION * R_SHUNT);
+	//Gain Selection (Gain of 20)
+	ADMUXB |= (1<<GSEL0);
+
+	//calculate shunt current
+	float ADC_ShuntVoltage = getADCValue(ADC_I_CHANNEL);
+	shuntCurrent = (ADC_ShuntVoltage * V_REF)/(ADC_RESOLUTION * R_SHUNT) * 10;
+
+	//disable gain
+	ADMUXB &= ~(1<<GSEL0);
 }
 
 State idle(){
