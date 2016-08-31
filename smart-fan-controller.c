@@ -9,6 +9,11 @@
 #define F_CPU 8000000UL
 #define F_PWM 18000UL
 #define BAUD 9600UL
+#define V_REF 5
+#define R_SHUNT	0.33
+#define ADC_RESOLUTION 1024
+#define	ADC_V_CHANNEL 10
+#define ADC_I_CHANNEL 11
 #include <avr/interrupt.h>
 #include <avr/io.h>
 #include <util/delay.h>
@@ -22,13 +27,20 @@ void initialiseAnalogComparator(void);
 void initialisePWMtimer(void);
 void calculateSpeed(int speedTimerCount);
 void intialiseSpeedTimer(void);
+void initialiseADCTimer(void);
 void initialiseADC(void);
 uint16_t getADCValue(uint8_t ADC_channel);
+void getVoltage(void);
+void getCurrent(void);
 void UART_Init(unsigned int UBRR_VAL);
 void UART_Transmit(uint8_t TX_data);
 
 int poleCount = 0;
 double dutyCycle = 0.7;
+
+//Global Voltage and Current Variables
+uint16_t supplyVoltage;
+uint16_t shuntCurrent;
 
 ISR(ANA_COMP0_vect)
 {
@@ -75,7 +87,8 @@ int main(void)
 	//initialize Analog Comparator
 	initialiseAnalogComparator();
 
-	//initialise ADC
+	//initialise ADC and it's timer
+	initialiseADCTimer();
 	initialiseADC();
 
 	//clear port B
@@ -87,6 +100,10 @@ int main(void)
 	unsigned int ubrrValue = ((F_CPU)/(BAUD*16)) - 1;
 	UART_Init(ubrrValue);
 
+	getVoltage();
+	getCurrent();
+
+
 	//State currentState = idle;
 
 	//uint16_t tx_data = 65536 - getADCValue(11);
@@ -94,6 +111,10 @@ int main(void)
 	//uint8_t tx2 = tx_data;
 	//UART_Transmit(tx1);
 	//UART_Transmit(tx2);
+	
+	//supplyVoltage is a 16 bit variable
+	UART_Transmit(supplyVoltage);
+	//UART_Transmit(shuntCurrent);
 
 	while (1) {	
 		//currentState = (State)currentState();
@@ -121,6 +142,8 @@ void initialiseAnalogComparator(void){
 	//initialise interrupt enable
 	ACSR0A |= (1<<ACIE0);
 }
+
+
 
 void intialiseSpeedTimer(void){
 
@@ -189,6 +212,25 @@ void calculateSpeed(int speedTimerCount){
 
 }
 
+void initialiseADCTimer(void){
+
+	//Ensure counter is stopped
+	TCCR0B &= ~(1<<CS02) & ~(1<<CS01) & ~(1<<CS00);
+
+	//Disable Timer0 Overflow Interrupt
+	TIMSK0 &= ~(TOIE0);
+
+	//Clearing input capture flag
+	TIFR0 |= (1<<TOV0);
+	
+	//Reset count
+	TCNT0 = 0x0000;
+
+	//Start the timer with 256 prescaler
+	TCCR0B |= (1<< CS02);
+
+}
+
 void initialiseADC(void) {
 
 	//Initialise DDRB
@@ -239,6 +281,18 @@ uint16_t getADCValue(uint8_t ADC_channel){
 
 	return ADC;
 
+}
+
+void getVoltage(void){
+
+	uint16_t ADC_Voltage = getADCValue(ADC_V_CHANNEL);
+	supplyVoltage = (ADC_Voltage * V_REF)/ADC_RESOLUTION;
+
+}
+
+void getCurrent(void){
+	uint16_t ADC_ShuntVoltage = getADCValue(ADC_I_CHANNEL);
+	shuntCurrent = (ADC_ShuntVoltage * V_REF)/(ADC_RESOLUTION * R_SHUNT);
 }
 
 State idle(){
