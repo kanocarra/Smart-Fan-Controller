@@ -44,6 +44,20 @@ uint16_t shuntCurrent;
 
 ISR(ANA_COMP0_vect)
 {
+	
+
+	if (poleCount == 7){
+		TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
+		uint16_t speedTimerCount;
+		//set speed count
+		speedTimerCount = TCNT1;
+		calculateSpeed(speedTimerCount);
+		intialiseSpeedTimer();
+		poleCount = 0;
+	}
+
+	poleCount++;
+
 	//disable interrupts
 	ACSR0A &= ~(1<<ACIE0);
 
@@ -56,29 +70,12 @@ ISR(ANA_COMP0_vect)
 
 	//enable interrupts once service done
 	ACSR0A |= (1<<ACIE0);
-
-	poleCount++;
-
-	if (poleCount == 7){
-		uint16_t speedTimerCount;
-		//Capture the count value stored in Input Capture Register
-		//stop counter 
-		//TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
-		//set speed count 
-		//speedTimerCount = TCNT1;
-		//calculateSpeed(speedTimerCount);
-		//intialiseSpeedTimer();
-		poleCount = 0;
-	} 
 }
 
 int main(void)	
 {	
 	//initialize PWM timer
 	initialisePWMtimer();
-
-	//initialise timer to calculate speed
-	//intialiseSpeedTimer();
 
 	//initialize Analog Comparator
 	initialiseAnalogComparator();
@@ -106,8 +103,8 @@ int main(void)
 	//supplyVoltage is a 16 bit variable
 	//UART_Transmit(shuntCurrent);
 	while (1) {	
-		getVoltage();
-		UART_Transmit(supplyVoltage*10);
+		//getVoltage();
+		//UART_Transmit(supplyVoltage*10);
 		//currentState = (State)currentState();
 	}
 }
@@ -136,6 +133,18 @@ void initialiseAnalogComparator(void){
 
 
 void intialiseSpeedTimer(void){
+
+	// Stop timer
+	TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
+	
+	//Reset count
+	TCNT1 = 0x0000;
+
+	// Disable overflow and input capture interrupts
+	TIMSK1 &= ~(1<<TOIE1) & ~(1<<ICIE1);
+
+	//Start timer with prescaler 8
+	TCCR1B |= (1<<CS11);
 	
 }
 
@@ -180,7 +189,9 @@ void initialisePWMtimer(void){
 }
 
 void calculateSpeed(uint16_t speedTimerCount){
-	uint8_t mechanicalFrequency = (uint8_t)(F_CPU/40000);
+
+	unsigned int prescaler = 8.0;
+	uint8_t mechanicalFrequency = (uint8_t)((F_CPU/prescaler)/speedTimerCount);
 	//unsigned int speedRpm = mechanicalFrequency * 60;
 	UART_Transmit(mechanicalFrequency);
 }
