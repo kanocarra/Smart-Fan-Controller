@@ -39,7 +39,7 @@ int poleCount = 0;
 double dutyCycle = 0.6;
 
 //Global Voltage and Current Variables
-uint16_t supplyVoltage;
+uint8_t supplyVoltage;
 uint16_t shuntCurrent;
 
 ISR(ANA_COMP0_vect)
@@ -97,14 +97,17 @@ int main(void)
 	UART_Init(ubrrValue);
 
 	getVoltage();
-	getCurrent();
+	//getCurrent();
+
+	uint8_t txData;
 
 	//State currentState = idle;
 	
 	//supplyVoltage is a 16 bit variable
-	UART_Transmit(supplyVoltage);
 	//UART_Transmit(shuntCurrent);
 	while (1) {	
+		getVoltage();
+		UART_Transmit(supplyVoltage*10);
 		//currentState = (State)currentState();
 	}
 }
@@ -222,7 +225,7 @@ void initialiseADC(void) {
 	ADMUXB &= ~(ADMUXB);
 
 	//Gain Selection (Gain of 20)
-	ADMUXB |= (1<<GSEL0);
+	//ADMUXB |= (1<<GSEL0);
 
 	//Enable ADC, Enable ADC Interrupt, Enable ADC Auto Trigger Enable, ADC Pre-scaler (divide by 64),
 	ADCSRA |= (1<<ADEN) | (1<<ADATE) | (1<<ADPS1) | (1<<ADPS2);
