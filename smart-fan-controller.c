@@ -38,13 +38,24 @@ void getCurrent(void);
 void UART_Init(unsigned int UBRR_VAL);
 void UART_Transmit(uint8_t TX_data);
 
+float calculateAverageRpm(void);
+void sendSpeedRpm(float averageSpeed);
+
+void setSpeed(float actualSpeed);
+void changeDutyCycle(void);
+
 int sampleCount = 0;
-double dutyCycle = 0.6;
+float dutyCycle = 0.6;
+int requestedSpeed = 2000;
 uint16_t speedTimerCount;
+float errorSum = 0;
+float lastError = 0;
 
 //Global Voltage and Current Variables
 float supplyVoltage;
 float shuntCurrent;
+float speedSamples[10];
+int speedIndex = 0;
 
 ISR(ANA_COMP0_vect)
 {
@@ -97,9 +108,9 @@ int main(void)
 
 	unsigned int ubrrValue = ((F_CPU)/(BAUD*16)) - 1;
 	UART_Init(ubrrValue);
-
+	getCurrent();
 	getVoltage();
-	//getCurrent();
+	
 
 	uint8_t txData1;
 	//uint8_t txData2;
@@ -108,12 +119,14 @@ int main(void)
 	//supplyVoltage is a 16 bit variable
 	//UART_Transmit(shuntCurrent);
 	while (1) {	
-		getVoltage();
-		txData1 = (uint8_t)supplyVoltage;
+		getCurrent();
+		txData1 = (uint8_t)shuntCurrent;
 		//UART_Transmit(txData1);
 		//currentState = (State)currentState();
 	}
 }
+
+
 
 void initialiseAnalogComparator(void){
 
@@ -202,11 +215,75 @@ void initialisePWMtimer(void){
 }
 
 void calculateSpeed(uint16_t speedTimerCount){
-
 	unsigned int prescaler = 8;
-	uint8_t mechanicalFrequency = (uint8_t)((F_CPU/prescaler)/speedTimerCount);
-	unsigned int speedRpm = ((mechanicalFrequency * 60)/3);
+	float mechanicalFrequency = (uint8_t)((F_CPU/prescaler)/speedTimerCount);
+	float speedRpm = ((mechanicalFrequency * 60)/3);
 	UART_Transmit(speedRpm/10);
+	setSpeed(speedRpm);
+
+	if(speedSamples < 10) {
+		speedSamples[speedIndex] = speedRpm;
+		speedIndex++;
+	} else {
+		float averageSpeed = calculateAverageRpm();
+		//sendSpeedRpm(averageSpeed);
+		//setSpeed(averageSpeed);
+		speedIndex = 0;
+	}
+}
+
+// Calculates the average RPM and clears the speed sample array
+float calculateAverageRpm(void){
+	
+	float sum = 0;
+	float prevSpeed = speedSamples[0];
+	float average = 0;
+	int samples = 0;
+
+	for(int i =0; i < speedIndex; i++){
+		// Check that the value is not an out-lier (50% larger than previous reading)
+		if(prevSpeed * 1.5 >= speedSamples[i]){
+			//Discard the value
+			speedSamples[i] = 0;
+			prevSpeed = speedSamples[i];
+		} else {
+			// Add to the total sum
+			sum = sum + speedSamples[i];
+			prevSpeed = speedSamples[i];
+			speedSamples[i] = 0;
+			samples++;
+		}
+	}
+	average = sum/samples;
+	return average;
+}
+
+void setSpeed(float actualSpeed){
+	float kP = 1;
+	float kI = 0;
+	float kD = 0;
+	float proportionalGain;
+	float output;
+
+	float error = requestedSpeed - actualSpeed; 
+	errorSum = errorSum + error;
+	output = kP * error + kI * errorSum + kD * error;
+
+	proportionalGain = requestedSpeed/(requestedSpeed - output);
+	dutyCycle = proportionalGain * dutyCycle;
+	changeDutyCycle();
+}
+
+void changeDutyCycle(void) {
+	unsigned int prescaler = 8;
+	uint16_t top = (F_CPU/(prescaler*F_PWM)) - 1;
+	uint16_t compareCount = dutyCycle*top;
+	OCR2A = compareCount;
+}
+
+void sendSpeedRpm(float averageSpeed){
+	uint8_t tx_data = (uint8_t)(averageSpeed/10.0);
+	UART_Transmit(tx_data);
 }
 
 void initialiseADCTimer(void){
@@ -293,7 +370,7 @@ void getCurrent(void){
 
 	//calculate shunt current
 	float ADC_ShuntVoltage = getADCValue(ADC_I_CHANNEL);
-	shuntCurrent = (ADC_ShuntVoltage * V_REF)/(ADC_RESOLUTION * R_SHUNT) * 10;
+	shuntCurrent = (ADC_ShuntVoltage * V_REF)/(ADC_RESOLUTION * R_SHUNT) * 1000;
 
 	//disable gain
 	ADMUXB &= ~(1<<GSEL0);
