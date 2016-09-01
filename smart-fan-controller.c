@@ -38,8 +38,9 @@ void getCurrent(void);
 void UART_Init(unsigned int UBRR_VAL);
 void UART_Transmit(uint8_t TX_data);
 
-int poleCount = 0;
+int sampleCount = 0;
 double dutyCycle = 0.6;
+uint16_t speedTimerCount;
 
 //Global Voltage and Current Variables
 float supplyVoltage;
@@ -49,17 +50,7 @@ ISR(ANA_COMP0_vect)
 {
 	
 
-	if (poleCount == 7){
-		TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
-		uint16_t speedTimerCount;
-		//set speed count
-		speedTimerCount = TCNT1;
-		calculateSpeed(speedTimerCount);
-		intialiseSpeedTimer();
-		poleCount = 0;
-	}
-
-	poleCount++;
+	//poleCount = 0;
 
 	//disable interrupts
 	ACSR0A &= ~(1<<ACIE0);
@@ -70,9 +61,18 @@ ISR(ANA_COMP0_vect)
 
 	//toggle between rising and falling
 	ACSR0A ^= (1<<ACIS00);
-
+	
 	//enable interrupts once service done
 	ACSR0A |= (1<<ACIE0);
+
+}
+
+ISR(TIMER1_CAPT_vect){
+
+	speedTimerCount = ICR1;
+	calculateSpeed(speedTimerCount);
+	ICR1 =0;
+	TCNT1 = 0;
 }
 
 int main(void)	
@@ -82,6 +82,8 @@ int main(void)
 
 	//initialize Analog Comparator
 	initialiseAnalogComparator();
+
+	intialiseSpeedTimer();
 
 	//initialise ADC and it's timer
 	initialiseADCTimer();
@@ -108,7 +110,7 @@ int main(void)
 	while (1) {	
 		getVoltage();
 		txData1 = (uint8_t)supplyVoltage;
-		UART_Transmit(txData1);
+		//UART_Transmit(txData1);
 		//currentState = (State)currentState();
 	}
 }
@@ -124,11 +126,11 @@ void initialiseAnalogComparator(void){
 	//Set hysteresis level of 50mV
 	ACSR0B |= (1<<HSEL0) | (1<<HLEV0);
 
-	//enable output comparator
-	ACSR0B |= (1<<ACOE0);
+	//enable comparator output on PORTA7
+	//ACSR0B |= (1<<ACOE0);
 
 	//set rising edge and input capture enable 
-	ACSR0A |= (1<<ACIS01) | (1<<ACIS00);
+	ACSR0A |= (1<<ACIS01) | (1<<ACIS00) | (1<<ACIC0);
 
 	//initialise interrupt enable
 	ACSR0A |= (1<<ACIE0);
@@ -142,8 +144,17 @@ void intialiseSpeedTimer(void){
 	//Reset count
 	TCNT1 = 0x0000;
 
-	// Disable overflow and input capture interrupts
-	TIMSK1 &= ~(1<<TOIE1) & ~(1<<ICIE1);
+	//Reset input capture register
+	ICR1 = 0;
+
+	//Set input capture on rising edge
+	TCCR1B |= (1<<ICES1);
+	
+	// Disable overflow interrupts
+	TIMSK1 &= ~(1<<TOIE1);
+
+	//Enable input capture interrupt
+	TIMSK1 |= (1<< ICIE1);
 
 	//Start timer with prescaler 8
 	TCCR1B |= (1<<CS11);
@@ -153,7 +164,7 @@ void intialiseSpeedTimer(void){
 void initialisePWMtimer(void){
 
 	//initialize variables
-	unsigned int prescaler = 1;
+	unsigned int prescaler = 8;
 	uint16_t top = (F_CPU/(prescaler*F_PWM)) - 1;
 	uint16_t compareCount = dutyCycle*top;
 	
@@ -192,10 +203,10 @@ void initialisePWMtimer(void){
 
 void calculateSpeed(uint16_t speedTimerCount){
 
-	unsigned int prescaler = 8.0;
+	unsigned int prescaler = 8;
 	uint8_t mechanicalFrequency = (uint8_t)((F_CPU/prescaler)/speedTimerCount);
-	//unsigned int speedRpm = mechanicalFrequency * 60;
-	UART_Transmit(mechanicalFrequency);
+	unsigned int speedRpm = ((mechanicalFrequency * 60)/3);
+	UART_Transmit(speedRpm/10);
 }
 
 void initialiseADCTimer(void){
