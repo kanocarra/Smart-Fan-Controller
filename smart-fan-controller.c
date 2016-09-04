@@ -45,7 +45,7 @@ void setSpeed(float actualSpeed);
 void changeDutyCycle(void);
 
 int sampleCount = 0;
-float dutyCycle = 0.6;
+float dutyCycle = 0.7;
 int requestedSpeed = 2000;
 uint16_t speedTimerCount;
 float errorSum = 0;
@@ -219,7 +219,7 @@ void calculateSpeed(uint16_t speedTimerCount){
 	float mechanicalFrequency = (uint8_t)((F_CPU/prescaler)/speedTimerCount);
 	float speedRpm = ((mechanicalFrequency * 60)/3);
 	UART_Transmit(speedRpm/10);
-	setSpeed(speedRpm);
+	//setSpeed(speedRpm);
 
 	if(speedSamples < 10) {
 		speedSamples[speedIndex] = speedRpm;
