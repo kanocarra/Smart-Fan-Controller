@@ -4,11 +4,16 @@
  * Created: 15/08/2016 4:11:57 p.m.
  * Author : emel269
  */ 
-
 #include <avr/io.h>
+#include <avr/interrupt.h>
+#include <stdio.h>
+ 
+#include "prototypes.h"
+#include "state.h"
+#include "error.h"
+
 #define F_CPU 8000000UL
 #define F_PWM 18000UL
-#define BAUD 9600UL
 #define V_REF 5
 #define R_SHUNT	0.33
 #define ADC_RESOLUTION 1024
@@ -17,36 +22,10 @@
 #define VDR_R1 56
 #define VDR_R2 22
 #define VDR_R3 82
-#include <avr/interrupt.h>
-#include <avr/io.h>
-#include <util/delay.h>
-#include <stdio.h> 
-
-#include "state.h"
-#include "error.h"
-
-//function declarations
-void initialiseAnalogComparator(void);
-void initialisePWMtimer(void);
-void calculateSpeed(uint16_t speedTimerCount);
-void intialiseSpeedTimer(void);
-void initialiseADCTimer(void);
-void initialiseADC(void);
-float getADCValue(uint8_t ADC_channel);
-void getVoltage(void);
-void getCurrent(void);
-void UART_Init(unsigned int UBRR_VAL);
-void UART_Transmit(uint8_t TX_data);
-
-float calculateAverageRpm(void);
-void sendSpeedRpm(float averageSpeed);
-
-void setSpeed(float actualSpeed);
-void changeDutyCycle(void);
 
 int sampleCount = 0;
-float dutyCycle = 0.7;
-int requestedSpeed = 2000;
+float dutyCycle = 0.15;
+int requestedSpeed = 400;
 uint16_t speedTimerCount;
 float errorSum = 0;
 float lastError = 0;
@@ -59,10 +38,6 @@ int speedIndex = 0;
 
 ISR(ANA_COMP0_vect)
 {
-	
-
-	//poleCount = 0;
-
 	//disable interrupts
 	ACSR0A &= ~(1<<ACIE0);
 
@@ -100,17 +75,16 @@ int main(void)
 	initialiseADCTimer();
 	initialiseADC();
 
+	InitialiseUART();
+
 	//clear port B
 	PORTB &= ~(PORTB);
 
 	//enable global interrupts
 	sei();
 
-	unsigned int ubrrValue = ((F_CPU)/(BAUD*16)) - 1;
-	UART_Init(ubrrValue);
 	getCurrent();
 	getVoltage();
-	
 
 	uint8_t txData1;
 	//uint8_t txData2;
@@ -207,7 +181,7 @@ void initialisePWMtimer(void){
 	TOCPMCOE &= ~(TOCPMCOE);
 
 	//Enable PWM Channel on TOCC5 first
-	TOCPMCOE |= (1<<TOCC5OE);
+	TOCPMCOE |= (1<<TOCC3OE);
 
 	//clk pre-scaler = 1 & start timer
 	TCCR2B |= (1<<CS20);
@@ -218,15 +192,15 @@ void calculateSpeed(uint16_t speedTimerCount){
 	unsigned int prescaler = 8;
 	float mechanicalFrequency = (uint8_t)((F_CPU/prescaler)/speedTimerCount);
 	float speedRpm = ((mechanicalFrequency * 60)/3);
-	UART_Transmit(speedRpm/10);
+	//TransmitUART(speedRpm/10);
 	//setSpeed(speedRpm);
 
-	if(speedSamples < 10) {
+	if(speedIndex < 10) {
 		speedSamples[speedIndex] = speedRpm;
 		speedIndex++;
 	} else {
 		float averageSpeed = calculateAverageRpm();
-		//sendSpeedRpm(averageSpeed);
+		sendSpeedRpm(averageSpeed);
 		//setSpeed(averageSpeed);
 		speedIndex = 0;
 	}
@@ -279,11 +253,6 @@ void changeDutyCycle(void) {
 	uint16_t top = (F_CPU/(prescaler*F_PWM)) - 1;
 	uint16_t compareCount = dutyCycle*top;
 	OCR2A = compareCount;
-}
-
-void sendSpeedRpm(float averageSpeed){
-	uint8_t tx_data = (uint8_t)(averageSpeed/10.0);
-	UART_Transmit(tx_data);
 }
 
 void initialiseADCTimer(void){
@@ -413,32 +382,4 @@ State blockedDuct(){
 State sendStatus(){
 	return (State)controlSpeed;
 
-}
-
-void UART_Init(unsigned int UBRR_VAL)
-{
-	// Setting the UBRR0 value using its High and Low registers
-	UBRR0H = (UBRR_VAL>>8);
-	UBRR0L = UBRR_VAL;
-	
-	// Enabling the USART receiver and transmitter
-	UCSR0B |= (1<<RXEN0) | (1<<TXEN0);
-	
-	// Define what kind of transmission we're using and how many
-	// start and stop bits we're using, as well as parity
-	UCSR0C |= (1<<UCSZ00) | (1<<UCSZ01);
-
-	REMAP |= (1<<U0MAP);
-}
-
-void UART_Transmit(uint8_t TX_data)
-{
-	// Check that the USART Data Register is empty, AND if UCSR0A
-	// is all 0s
-	while(!(UCSR0A & (1<<UDRE0)));
-	
-	// Since UDR is empty put the data we want to send into it,
-	// then wait for a second and send the following data
-	UDR0 = TX_data;
-	
 }
