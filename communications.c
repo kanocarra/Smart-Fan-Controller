@@ -12,7 +12,7 @@
  #define F_CPU 8000000UL
  #include "prototypes.h"
 
-void InitialiseUART()
+void initialiseUART()
 {
 	// Set the UBRR value based on the baud rate and clock frequency 
 	unsigned int ubrrValue = ((F_CPU)/(BAUD*16)) - 1;

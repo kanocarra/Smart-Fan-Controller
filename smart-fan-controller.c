@@ -7,6 +7,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
+#include <util/delay.h>
  
 #include "prototypes.h"
 #include "state.h"
@@ -24,24 +25,20 @@ float shuntCurrent;
 
 int main(void)	
 {	
-	initialisePWM(F_PWM, 0.7, 1);
-	intialiseSpeedTimer();
-	initialiseADC();
-
-	InitialiseUART();
-
+	
+	//initialiseADC();
+	State currentState = start;
 	//enable global interrupts
 	sei();
 
 	
 	while (1) {	
-		//currentState = (State)currentState();
+		currentState = (State)currentState();
 	}
 }
 
 State idle(){
 	return (State)idle;
-
 }
 
 State receiveData(){
@@ -49,7 +46,11 @@ State receiveData(){
 }
 
 State start(){
-	return (State)start;
+	initialisePWM(F_PWM, 0.7, 1);
+	intialiseSpeedTimer();
+	initialiseUART();
+
+	return (State)idle;
 }
 
 State changeDirection(){
@@ -75,5 +76,4 @@ State blockedDuct(){
 
 State sendStatus(){
 	return (State)controlSpeed;
-
 }

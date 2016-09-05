@@ -90,7 +90,7 @@ void getCurrent(void);
 /*******************************************************************/
 
 // Initialising UART 
-void InitialiseUART();
+void initialiseUART();
 
 // Transmit the data over UART
 void TransmitUART(uint8_t TX_data);
