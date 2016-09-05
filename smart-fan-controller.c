@@ -24,17 +24,17 @@
 #define VDR_R3 82
 
 int sampleCount = 0;
-float dutyCycle = 0.8;
 int requestedSpeed = 400;
 uint16_t speedTimerCount;
 float errorSum = 0;
 float lastError = 0;
+extern struct parameters pwm;
 
 //Global Voltage and Current Variables
 float supplyVoltage;
 float shuntCurrent;
 float speedSamples[10];
-int speedIndex = 0;
+int speedIndex = 0; 
 
 ISR(ANA_COMP0_vect)
 {
@@ -63,11 +63,7 @@ ISR(TIMER1_CAPT_vect){
 
 int main(void)	
 {	
-	//initialize PWM timer
-	initialisePWMtimer();
-
-	//initialize Analog Comparator
-	initialiseAnalogComparator();
+	initialisePWM(F_PWM, 0.95, 1);
 
 	intialiseSpeedTimer();
 
@@ -100,29 +96,6 @@ int main(void)
 	}
 }
 
-
-
-void initialiseAnalogComparator(void){
-
-	// clear control and status register A
-	 ACSR0A &= ~(ACSR0A);
-
-	// clear control and status register B
-	 ACSR0B &= ~(ACSR0B);
-
-	//Set hysteresis level of 50mV
-	ACSR0B |= (1<<HSEL0) | (1<<HLEV0);
-
-	//enable comparator output on PORTA7
-	//ACSR0B |= (1<<ACOE0);
-
-	//set rising edge and input capture enable 
-	ACSR0A |= (1<<ACIS01) | (1<<ACIS00) | (1<<ACIC0);
-
-	//initialise interrupt enable
-	ACSR0A |= (1<<ACIE0);
-}
-
 void intialiseSpeedTimer(void){
 
 	// Stop timer
@@ -146,46 +119,6 @@ void intialiseSpeedTimer(void){
 	//Start timer with prescaler 64
 	TCCR1B |= (1<<CS11) | (1<<CS10);
 	
-}
-
-void initialisePWMtimer(void){
-
-	//initialize variables
-	unsigned int prescaler = 8;
-	uint16_t top = (F_CPU/(prescaler*F_PWM)) - 1;
-	uint16_t compareCount = dutyCycle*top;
-	
-	//configure data direction register channel 0 as output "PA2" - port A1
-	DDRA |= (1<<PORTA4);
-	DDRA |= (1<<PORTA6);
-
-	//set compare value
-	OCR2A = compareCount;		//necessary for 8 bit number
-
-	//defined TOP value for "WGM 1110"
-	ICR2 = top;
-	
-	//clear registers in charge of set points
-	TCCR2A &= ~(TCCR2A);
-	TCCR2B &= ~(TCCR2B);
-
-	//Compare Output Mode, Fast PWM
-	TCCR2A |= (1<<COM2A1) | (1<<WGM21);
-	TCCR2B |= (1<<WGM22) | (1<<WGM23);
-
-	//timer/counter output compare mux TOCC1
-	TOCPMSA0 |= (1<<TOCC3S1);
-	TOCPMSA1 |= (1<<TOCC5S1);
-
-	// Clear output compare mode channel enable register
-	TOCPMCOE &= ~(TOCPMCOE);
-
-	//Enable PWM Channel on TOCC5 first
-	TOCPMCOE |= (1<<TOCC3OE);
-
-	//clk pre-scaler = 1 & start timer
-	TCCR2B |= (1<<CS20);
-
 }
 
 void calculateSpeed(uint16_t speedTimerCount){
@@ -244,15 +177,8 @@ void setSpeed(float actualSpeed){
 	output = kP * error + kI * errorSum + kD * error;
 
 	proportionalGain = requestedSpeed/(requestedSpeed - output);
-	dutyCycle = proportionalGain * dutyCycle;
-	changeDutyCycle();
-}
-
-void changeDutyCycle(void) {
-	unsigned int prescaler = 64;
-	uint16_t top = (F_CPU/(prescaler*F_PWM)) - 1;
-	uint16_t compareCount = dutyCycle*top;
-	OCR2A = compareCount;
+	pwm.dutyCycle = proportionalGain * pwm.dutyCycle;
+	setDutyCycle();
 }
 
 void initialiseADCTimer(void){

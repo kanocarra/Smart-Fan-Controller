@@ -9,8 +9,17 @@
 #define PROTOTYPES_H_
 
 
+struct parameters {
+	unsigned long frequency;
+	float dutyCycle;
+	unsigned int prescaler;
+	uint16_t top;
+};
+
 /*************************** PWM GENERATION **************************/
 /********************************************************************/
+
+void initialisePWM(unsigned long frequency, float dutyCycle, unsigned int prescaler);
 
 // Hall Effect sensor
 void initialiseAnalogComparator(void);
@@ -18,6 +27,8 @@ void initialiseAnalogComparator(void);
 //PWM waveform generation
 void initialisePWMtimer(void);
 
+// Adjust the PWM duty cycle
+void setDutyCycle(void);
 
 
 /************************* FAN SPEED CONTROL ************************/
@@ -37,9 +48,6 @@ void sendSpeedRpm(float averageSpeed);
 
 // Set the new speed
 void setSpeed(float actualSpeed);
-
-// Adjust the PWM duty cycle
-void changeDutyCycle(void);
 
 
 
