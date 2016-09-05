@@ -24,7 +24,7 @@
 #define VDR_R3 82
 
 int sampleCount = 0;
-float dutyCycle = 0.15;
+float dutyCycle = 0.8;
 int requestedSpeed = 400;
 uint16_t speedTimerCount;
 float errorSum = 0;
@@ -57,7 +57,7 @@ ISR(TIMER1_CAPT_vect){
 
 	speedTimerCount = ICR1;
 	calculateSpeed(speedTimerCount);
-	ICR1 =0;
+	ICR1 = 0;
 	TCNT1 = 0;
 }
 
@@ -143,8 +143,8 @@ void intialiseSpeedTimer(void){
 	//Enable input capture interrupt
 	TIMSK1 |= (1<< ICIE1);
 
-	//Start timer with prescaler 8
-	TCCR1B |= (1<<CS11);
+	//Start timer with prescaler 64
+	TCCR1B |= (1<<CS11) | (1<<CS10);
 	
 }
 
@@ -189,7 +189,7 @@ void initialisePWMtimer(void){
 }
 
 void calculateSpeed(uint16_t speedTimerCount){
-	unsigned int prescaler = 8;
+	unsigned int prescaler = 64;
 	float mechanicalFrequency = (uint8_t)((F_CPU/prescaler)/speedTimerCount);
 	float speedRpm = ((mechanicalFrequency * 60)/3);
 	//TransmitUART(speedRpm/10);
@@ -249,7 +249,7 @@ void setSpeed(float actualSpeed){
 }
 
 void changeDutyCycle(void) {
-	unsigned int prescaler = 8;
+	unsigned int prescaler = 64;
 	uint16_t top = (F_CPU/(prescaler*F_PWM)) - 1;
 	uint16_t compareCount = dutyCycle*top;
 	OCR2A = compareCount;
