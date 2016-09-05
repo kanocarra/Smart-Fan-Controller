@@ -23,18 +23,13 @@
 #define VDR_R2 22
 #define VDR_R3 82
 
-int sampleCount = 0;
-int requestedSpeed = 400;
-uint16_t speedTimerCount;
-float errorSum = 0;
-float lastError = 0;
-extern struct parameters pwm;
+extern struct pwmParameters pwm;
+extern struct speedParameters speedControl;
 
 //Global Voltage and Current Variables
 float supplyVoltage;
 float shuntCurrent;
-float speedSamples[10];
-int speedIndex = 0; 
+
 
 ISR(ANA_COMP0_vect)
 {
@@ -55,8 +50,8 @@ ISR(ANA_COMP0_vect)
 
 ISR(TIMER1_CAPT_vect){
 
-	speedTimerCount = ICR1;
-	calculateSpeed(speedTimerCount);
+	speedControl.timerCount = ICR1;
+	calculateSpeed();
 	ICR1 = 0;
 	TCNT1 = 0;
 }
@@ -94,91 +89,6 @@ int main(void)
 		//UART_Transmit(txData1);
 		//currentState = (State)currentState();
 	}
-}
-
-void intialiseSpeedTimer(void){
-
-	// Stop timer
-	TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
-	
-	//Reset count
-	TCNT1 = 0x0000;
-
-	//Reset input capture register
-	ICR1 = 0;
-
-	//Set input capture on rising edge
-	TCCR1B |= (1<<ICES1);
-	
-	// Disable overflow interrupts
-	TIMSK1 &= ~(1<<TOIE1);
-
-	//Enable input capture interrupt
-	TIMSK1 |= (1<< ICIE1);
-
-	//Start timer with prescaler 64
-	TCCR1B |= (1<<CS11) | (1<<CS10);
-	
-}
-
-void calculateSpeed(uint16_t speedTimerCount){
-	unsigned int prescaler = 64;
-	float mechanicalFrequency = (uint8_t)((F_CPU/prescaler)/speedTimerCount);
-	float speedRpm = ((mechanicalFrequency * 60)/3);
-	//TransmitUART(speedRpm/10);
-	//setSpeed(speedRpm);
-
-	if(speedIndex < 10) {
-		speedSamples[speedIndex] = speedRpm;
-		speedIndex++;
-	} else {
-		float averageSpeed = calculateAverageRpm();
-		sendSpeedRpm(averageSpeed);
-		//setSpeed(averageSpeed);
-		speedIndex = 0;
-	}
-}
-
-// Calculates the average RPM and clears the speed sample array
-float calculateAverageRpm(void){
-	
-	float sum = 0;
-	float prevSpeed = speedSamples[0];
-	float average = 0;
-	int samples = 0;
-
-	for(int i =0; i < speedIndex; i++){
-		// Check that the value is not an out-lier (50% larger than previous reading)
-		if(prevSpeed * 1.5 >= speedSamples[i]){
-			//Discard the value
-			speedSamples[i] = 0;
-			prevSpeed = speedSamples[i];
-		} else {
-			// Add to the total sum
-			sum = sum + speedSamples[i];
-			prevSpeed = speedSamples[i];
-			speedSamples[i] = 0;
-			samples++;
-		}
-	}
-	average = sum/samples;
-	return average;
-}
-
-void setSpeed(float actualSpeed){
-	float kP = 1;
-	float kI = 0;
-	float kD = 0;
-	float proportionalGain;
-	float output;
-
-	float error = requestedSpeed - actualSpeed; 
-	errorSum = errorSum + error;
-	output = kP * error + kI * errorSum + kD * error;
-
-	proportionalGain = requestedSpeed/(requestedSpeed - output);
-	pwm.dutyCycle = proportionalGain * pwm.dutyCycle;
-	setDutyCycle();
 }
 
 void initialiseADCTimer(void){
