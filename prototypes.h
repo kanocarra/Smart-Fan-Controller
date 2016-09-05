@@ -9,11 +9,26 @@
 #define PROTOTYPES_H_
 
 
-struct parameters {
+struct pwmParameters {
 	unsigned long frequency;
 	float dutyCycle;
 	unsigned int prescaler;
 	uint16_t top;
+};
+
+struct speedParameters{
+	float samples[10];
+	int currentIndex;
+	int requestedSpeed;
+	float currentSpeed;
+	uint16_t timerCount;
+	float errorSum;
+	float lastError;
+};
+
+struct powerParameters{
+	float voltage;
+	float current;
 };
 
 /*************************** PWM GENERATION **************************/
@@ -28,7 +43,7 @@ void initialiseAnalogComparator(void);
 void initialisePWMtimer(void);
 
 // Adjust the PWM duty cycle
-void setDutyCycle(void);
+void setDutyCycle(float gain);
 
 
 /************************* FAN SPEED CONTROL ************************/
@@ -38,16 +53,16 @@ void setDutyCycle(void);
 void intialiseSpeedTimer(void);
 
 // Calculate fan speed in rpm
-void calculateSpeed(uint16_t speedTimerCount);
+void calculateSpeed(void);
 
 // Calculate average fan speed in rpm
-float calculateAverageRpm(void);
+void calculateAverageRpm(void);
 
 // Send the RPM value/10
 void sendSpeedRpm(float averageSpeed);
 
 // Set the new speed
-void setSpeed(float actualSpeed);
+void setSpeed(void);
 
 
 

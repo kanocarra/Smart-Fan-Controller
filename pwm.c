@@ -10,7 +10,24 @@
 #define F_CPU 8000000UL
 #include "prototypes.h"
 
-struct parameters pwm;
+struct pwmParameters pwm;
+
+ISR(ANA_COMP0_vect)
+{
+	//disable interrupts
+	ACSR0A &= ~(1<<ACIE0);
+
+	//Toggle between PWM channel
+	TOCPMCOE ^= (1<<TOCC3OE);
+	TOCPMCOE ^= (1<<TOCC5OE);
+
+	//toggle between rising and falling
+	ACSR0A ^= (1<<ACIS00);
+	
+	//enable interrupts once service done
+	ACSR0A |= (1<<ACIE0);
+
+}
 
  void initialisePWM(unsigned long frequency, float dutyCycle, unsigned int prescaler) {
 	
@@ -29,7 +46,7 @@ struct parameters pwm;
  void initialisePWMtimer(void){
 
 	 //Adjust duty cycle
-	setDutyCycle();
+	setDutyCycle(1);
 	 
 	 //configure data direction register channel 0 as output "PA2" - port A1
 	 DDRA |= (1<<PORTA4);
@@ -82,7 +99,8 @@ struct parameters pwm;
 	 ACSR0A |= (1<<ACIE0);
  }
 
- void setDutyCycle(void) {
-	 uint16_t compareCount = pwm.dutyCycle*pwm.top;
-	 OCR2A = compareCount;
+ void setDutyCycle(float gain) {
+	pwm.dutyCycle = gain * pwm.dutyCycle;
+	uint16_t compareCount = pwm.dutyCycle*pwm.top;
+	OCR2A = compareCount;
  }

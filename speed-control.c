@@ -12,6 +12,14 @@
  #include "prototypes.h"
  struct speedParameters speedControl;
 
+ ISR(TIMER1_CAPT_vect){
+
+	 speedControl.timerCount = ICR1;
+	 calculateSpeed();
+	 ICR1 = 0;
+	 TCNT1 = 0;
+ }
+
  void intialiseSpeedTimer(void){
 
 	 // Stop timer
