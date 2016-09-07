@@ -7,7 +7,6 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
-#include <util/delay.h>
  
 #include "prototypes.h"
 #include "state.h"
@@ -18,10 +17,6 @@
 extern struct pwmParameters pwm;
 extern struct speedParameters speedControl;
 extern struct powerParameters power;
-
-//Global Voltage and Current Variables
-float supplyVoltage;
-float shuntCurrent;
 
 int main(void)	
 {	
@@ -46,7 +41,7 @@ State receiveData(){
 }
 
 State start(){
-	initialisePWM(F_PWM, 0.7, 1);
+	initialisePWM(F_PWM, 0.75, 1);
 	intialiseSpeedTimer();
 	initialiseUART();
 

@@ -21,14 +21,19 @@ struct speedParameters{
 	int currentIndex;
 	int requestedSpeed;
 	float currentSpeed;
+	float averageSpeed;
 	uint16_t timerCount;
 	float errorSum;
 	float lastError;
+	float sampleTime;
+	float sampleCounter;
 };
 
 struct powerParameters{
-	float voltage;
+	float voltageSamples[10];
+	float currentSamples[10];
 	float current;
+	float voltage;
 };
 
 /*************************** PWM GENERATION **************************/
@@ -53,7 +58,7 @@ void setDutyCycle(float gain);
 void intialiseSpeedTimer(void);
 
 // Calculate fan speed in rpm
-void calculateSpeed(void);
+void pidController(void);
 
 // Calculate average fan speed in rpm
 void calculateAverageRpm(void);

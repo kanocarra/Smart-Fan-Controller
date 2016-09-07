@@ -15,7 +15,8 @@
  ISR(TIMER1_CAPT_vect){
 
 	 speedControl.timerCount = ICR1;
-	 calculateSpeed();
+	 speedControl.sampleCounter += speedControl.timerCount;
+	 pidController();
 	 ICR1 = 0;
 	 TCNT1 = 0;
  }
@@ -42,25 +43,30 @@
 
 	 //Start timer with prescaler 64
 	 TCCR1B |= (1<<CS11) | (1<<CS10);
+
+	 speedControl.requestedSpeed = 2500;
+	 speedControl.sampleTime = 0;
+	 speedControl.lastError = 0;
 	 
  }
 
- void calculateSpeed(void){
-	 unsigned int prescaler = 64;
-	 float mechanicalFrequency = (uint8_t)((F_CPU/prescaler)/speedControl.timerCount);
-	 float speedRpm = ((mechanicalFrequency * 60)/3);
-	 //TransmitUART(speedRpm/10);
-	 //setSpeed(speedRpm);
+ void pidController(void){
+	unsigned int prescaler = 64;
+	float mechanicalFrequency = (uint8_t)((F_CPU/prescaler)/speedControl.timerCount);
+	speedControl.currentSpeed = ((mechanicalFrequency * 60)/3);
 
 	 if(speedControl.currentIndex < 10) {
-		 speedControl.samples[speedControl.currentIndex] = speedRpm;
+		 speedControl.samples[speedControl.currentIndex] = speedControl.currentSpeed;
 		 speedControl.currentIndex++;
-		 } else {
-		 calculateAverageRpm();
-		 sendSpeedRpm(speedControl.currentSpeed);
-		 //setSpeed();
+	 } else {
+	   	 calculateAverageRpm();
+		 sendSpeedRpm(speedControl.averageSpeed);
 		 speedControl.currentIndex = 0;
-	 }
+		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/prescaler);
+		 setSpeed();
+		 speedControl.sampleCounter = 0;
+
+	}
  }
 
  // Calculates the average RPM and clears the speed sample array
@@ -84,21 +90,24 @@
 			 valueCount++;
 		 }
 	 }
-	 speedControl.currentSpeed  = sum/valueCount;
+	 speedControl.averageSpeed  = sum/valueCount;
  }
 
  void setSpeed(void){
-	 float kP = 1;
-	 float kI = 0;
-	 float kD = 0;
+	 float kP = 0.6;
+	 float kI = 0.3;
+	 float kD = 0.07;
 	 float proportionalGain;
 	 float output;
 
 	 float error = speedControl.requestedSpeed - speedControl.currentSpeed;
-	 speedControl.errorSum = speedControl.errorSum + error;
-	 output = kP * error + kI * speedControl.errorSum + kD * error;
+	 speedControl.errorSum = (speedControl.errorSum + error) * speedControl.sampleTime;
+
+	 output = kP * error + (kD * (error - speedControl.lastError)/speedControl.sampleTime) + (kI * speedControl.errorSum); 
+	 
+	 speedControl.lastError = error;
 
 	 proportionalGain = speedControl.requestedSpeed/(speedControl.requestedSpeed - output);
-	 //pwm.dutyCycle = proportionalGain * pwm.dutyCycle;
 	 setDutyCycle(proportionalGain);
+	 
  }
