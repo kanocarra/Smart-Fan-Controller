@@ -94,9 +94,9 @@
  }
 
  void setSpeed(void){
-	 float kP = 0.6;
-	 float kI = 0.3;
-	 float kD = 0.07;
+	 float kP = 0.0625;
+	 float kI = 0.003;
+	 float kD = 0.08;
 	 float proportionalGain;
 	 float output;
 
