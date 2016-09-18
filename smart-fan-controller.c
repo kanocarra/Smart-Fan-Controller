@@ -17,15 +17,14 @@
 extern struct pwmParameters pwm;
 extern struct speedParameters speedControl;
 extern struct powerParameters power;
+extern struct communicationsPacket packet;
 
 int main(void)	
 {	
 	
-	//initialiseADC();
 	State currentState = start;
 	//enable global interrupts
 	sei();
-
 	
 	while (1) {	
 		currentState = (State)currentState();
@@ -33,6 +32,7 @@ int main(void)
 }
 
 State idle(){
+	//TransmitUART(power.RMScurrent);
 	return (State)idle;
 }
 
@@ -41,9 +41,11 @@ State receiveData(){
 }
 
 State start(){
-	initialisePWM(F_PWM, 0.75, 1);
+	initialisePWM(F_PWM, 0.65, 1);
 	intialiseSpeedTimer();
 	initialiseUART();
+	//initialiseADC();
+	
 
 	return (State)idle;
 }

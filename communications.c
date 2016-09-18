@@ -12,22 +12,59 @@
  #define F_CPU 8000000UL
  #include "prototypes.h"
 
+ struct communicationsPacket packet;
+
+ISR(USART0_RX_vect){
+	
+	PORTA |= (1<< PORTA0); 
+	
+	unsigned int rX_data = UDR0;
+	
+	packet.characters[packet.index] = rX_data; 
+
+	if(packet.speedIndex == 3)
+	{
+		packet.index = 0;
+		packet.messageId = 0;
+		packet.speedIndex = 0;
+		unsigned int speed = packet.speedValues[0] * 1000 + packet.speedValues[1] * 100 +  packet.speedValues[2] * 10;
+		setRequestedSpeed(speed);
+	}
+
+	if(packet.index >= 3){
+		packet.speedValues[packet.index - 3] = rX_data;
+		packet.speedIndex++;
+	}
+
+	if(packet.index == 2){
+		packet.messageId = rX_data;	
+	}
+
+	packet.index++;
+}
+
 void initialiseUART()
 {
+	DDRA |= (1<< PORTA0);
+	PORTA &= ~(1<< PORTA0); 
 	// Set the UBRR value based on the baud rate and clock frequency 
 	unsigned int ubrrValue = ((F_CPU)/(BAUD*16)) - 1;
+
+	packet.index = 0;
+	packet.messageId = 0;
+	packet.speedIndex = 0;
 
 	// Setting the UBRR0 value using its High and Low registers
 	UBRR0H = (ubrrValue>>8);
 	UBRR0L = ubrrValue;
 	
-	// Enabling the USART receiver and transmitter
-	UCSR0B |= (1<<RXEN0) | (1<<TXEN0);
-	
-	// Define what kind of transmission we're using and how many
-	// start and stop bits we're using, as well as parity
+	// Enabling the USART receiver and transmitter and enable receive interrupt
+	UCSR0B |= (1<<RXEN0) | (1<<TXEN0) | (1 << RXCIE0);
+
+	// Set frame size to 8-bits
 	UCSR0C |= (1<<UCSZ00) | (1<<UCSZ01);
 
+	// Map Tx to PA7 and Rx to PB2
 	REMAP |= (1<<U0MAP);
 }
 
@@ -47,3 +84,9 @@ void sendSpeedRpm(float averageSpeed){
 	uint8_t tx_data = (uint8_t)(averageSpeed/10.0);
 	TransmitUART(tx_data);
 }
+
+void sendCurrent(float RMScurrent){
+	uint8_t tx_data = (uint8_t)(RMScurrent * 1000.0);
+	TransmitUART(tx_data);
+}
+

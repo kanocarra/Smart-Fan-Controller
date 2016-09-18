@@ -47,7 +47,7 @@
 	 speedControl.requestedSpeed = 2500;
 	 speedControl.sampleTime = 0;
 	 speedControl.lastError = 0;
-	 
+	 speedControl.lastSpeed = 0;
  }
 
  void pidController(void){
@@ -61,10 +61,10 @@
 	 } else {
 	   	 calculateAverageRpm();
 		 sendSpeedRpm(speedControl.averageSpeed);
-		 speedControl.currentIndex = 0;
 		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/prescaler);
 		 setSpeed();
 		 speedControl.sampleCounter = 0;
+		 speedControl.currentIndex = 0;
 
 	}
  }
@@ -100,14 +100,39 @@
 	 float proportionalGain;
 	 float output;
 
+	 //Max PWM Output
+	 double Max = 400;
+	 double Min = 0;
+
 	 float error = speedControl.requestedSpeed - speedControl.currentSpeed;
+
 	 speedControl.errorSum = (speedControl.errorSum + error) * speedControl.sampleTime;
 
-	 output = kP * error + (kD * (error - speedControl.lastError)/speedControl.sampleTime) + (kI * speedControl.errorSum); 
+	 //clamp the integral term between 0 and 400 to prevent integral windup
+	// if(speedControl.errorSum > Max) speedControl.errorSum = Max;
+	 //else if(speedControl.errorSum < Min) speedControl.errorSum = Min;
+
+	 output = kP * error + (kI * speedControl.errorSum) - (kD * (speedControl.currentSpeed - speedControl.lastSpeed)/speedControl.sampleTime); 
 	 
+	 //clamp the outputs between 0 and 400 to prevent windup
+	 if(output> Max) speedControl.errorSum = Max;
+	 else if(output < Min) speedControl.errorSum = Min;
+
 	 speedControl.lastError = error;
+	 speedControl.lastSpeed = speedControl.currentSpeed;
 
 	 proportionalGain = speedControl.requestedSpeed/(speedControl.requestedSpeed - output);
 	 setDutyCycle(proportionalGain);
 	 
+ }
+
+ void setRequestedSpeed(unsigned int speed){
+	
+	// Changes requested speed
+	speedControl.requestedSpeed = speed;
+
+	// Reset errors for controller
+	speedControl.lastError = 0;
+	speedControl.errorSum = 0;
+	setSpeed();
  }

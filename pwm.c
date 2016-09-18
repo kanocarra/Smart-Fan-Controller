@@ -70,8 +70,8 @@ ISR(ANA_COMP0_vect)
 	 // Clear output compare mode channel enable register
 	 TOCPMCOE &= ~(TOCPMCOE);
 
-	 //Enable PWM Channel on TOCC3 first
-	 TOCPMCOE |= (1<<TOCC3OE);
+	 //Enable PWM Channel on TOCC5 first
+	 TOCPMCOE |= (1<<TOCC5OE);
 
 	 //clk pre-scaler = 1 & start timer
 	 TCCR2B |= (1<<CS20);

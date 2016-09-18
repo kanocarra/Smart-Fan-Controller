@@ -19,7 +19,7 @@ struct pwmParameters {
 struct speedParameters{
 	float samples[10];
 	int currentIndex;
-	int requestedSpeed;
+	unsigned int requestedSpeed;
 	float currentSpeed;
 	float averageSpeed;
 	uint16_t timerCount;
@@ -27,13 +27,23 @@ struct speedParameters{
 	float lastError;
 	float sampleTime;
 	float sampleCounter;
+	float lastSpeed;
 };
 
 struct powerParameters{
 	float voltageSamples[10];
 	float currentSamples[10];
-	float current;
+	float sqCurrentSum;
+	float RMScurrent;
 	float voltage;
+};
+
+struct communicationsPacket {
+	unsigned int characters[8];
+	unsigned int index;
+	unsigned int messageId;
+	unsigned int speedValues[3];
+	unsigned int speedIndex;
 };
 
 /*************************** PWM GENERATION **************************/
@@ -69,6 +79,9 @@ void sendSpeedRpm(float averageSpeed);
 // Set the new speed
 void setSpeed(void);
 
+// Set a new requested speed
+void setRequestedSpeed(unsigned int speed);
+
 
 
 /******************** POWER CONSUMPTION MEASUREMENT *****************/
@@ -81,7 +94,7 @@ void initialiseADC(void);
 void initialiseADCTimer(void);
 
 // Get the reading from the ADC
-float getADCValue(uint8_t ADC_channel);
+void getADCValue(uint8_t ADC_channel);
 
 // Calculate voltage
 void getVoltage(void);
@@ -89,6 +102,7 @@ void getVoltage(void);
 // Calculate current
 void getCurrent(void);
 
+void sendCurrent(float RMScurrent);
 
 
 /**************************** COMMUNICATIONS ************************/
