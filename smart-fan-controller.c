@@ -55,6 +55,47 @@ State changeDirection(){
 }
 
 State adjustSpeed(){
+
+	if(packet.transmissionComplete){
+		
+		switch(packet.messageId) {
+			
+			case 83:
+				
+				//Disables UART until speed has been changed
+				disableUART();
+
+				//Set the new requested speed
+				setRequestedSpeed(packet.requestedSpeed);
+				
+				// Reset transmission for a new frame
+				packet.transmissionComplete = 0;
+				
+				// Re-enable UART
+				enableUART();
+				break;
+			
+			case 63:
+				//Disables UART until speed has been changed
+				disableUART();
+
+				float sendSpeed = speedControl.currentSpeed;
+				float sendPower = power.powerValue;
+				unsigned int error = errorStatus;
+
+				sendStatusReport(sendSpeed, sendPower, error);
+				
+				// Reset transmission for a new frame
+				packet.transmissionComplete = 0;
+								
+				// Re-enable UART
+				enableUART();
+
+				break;	
+		} 
+
+	}
+
 	return (State)controlSpeed;
 }
 

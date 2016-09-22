@@ -11,6 +11,8 @@
  #define BAUD 9600UL
  #define F_CPU 8000000UL
  #define FAN_ID 2
+ #define SW_VERSION 1
+
  #include "prototypes.h"
 
  struct communicationsPacket packet;
@@ -33,7 +35,8 @@ ISR(USART0_RX_vect){
 	
 	unsigned int rX_data = UDR0;
 	
-	packet.characters[packet.index] = rX_data; 
+	packet.characters[packet.index] = rX_data;
+	packet.index++; 
 
 	switch (packet.index) {
 		case SOURCE_ID:
@@ -49,7 +52,6 @@ ISR(USART0_RX_vect){
 				packet.index++;
 			} else {
 				packet.index = LF;
-				reti();
 			}
 			break;
 
@@ -84,14 +86,12 @@ ISR(USART0_RX_vect){
 		case LF:
 			if(rX_data == 10) {
 				if(packet.messageId == 83) {
-					unsigned int speed = packet.speedValues[0] * 1000 + packet.speedValues[1] * 100 +  packet.speedValues[2] * 10;
-					setRequestedSpeed(speed);
+					packet.requestedSpeed = packet.speedValues[0] * 1000 + packet.speedValues[1] * 100 +  packet.speedValues[2] * 10;
 					packet.speedValues[0] = 0;
 					packet.speedValues[1] = 0;
 					packet.speedValues[2] = 0;
 					packet.transmissionComplete = 1;
 				} else if (packet.messageId == 63) {
-					sendStatusReport();
 					packet.transmissionComplete = 1;
 				}
 			}
@@ -125,7 +125,7 @@ void initialiseUART()
 	UBRR0L = ubrrValue;
 	
 	// Enabling the USART receiver and transmitter and enable receive interrupt
-	UCSR0B |= (1<<RXEN0) | (1<<TXEN0); //| (1 << RXCIE0);
+	UCSR0B |= (1<<RXEN0) | (1<<TXEN0) | (1 << RXCIE0);
 
 	// Set frame size to 8-bits
 	UCSR0C |= (1<<UCSZ00) | (1<<UCSZ01);
@@ -156,7 +156,19 @@ void sendCurrent(float RMScurrent){
 	TransmitUART(tx_data);
 }
 
-void sendStatusReport(void) {
+void sendStatusReport(float speed, float power, unsigned int error) {
+	uint8_t sendPacket[8];
 
+	sendPacket[0] = SW_VERSION;
+	 
 }
 
+void disableUART(void){
+	// Disable UART receive interrupt
+	UCSR0B &= ~(1 << RXCIE0);
+}
+
+void enableUART(void) {
+	// Enable UART receive interrupt
+	UCSR0B |= (1 << RXCIE0);
+}
