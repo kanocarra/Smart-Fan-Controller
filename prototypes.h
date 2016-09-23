@@ -5,6 +5,8 @@
  *  Author: emel269
  */ 
 
+#include <stdbool.h>
+
 #ifndef PROTOTYPES_H_
 #define PROTOTYPES_H_
 
@@ -28,6 +30,7 @@ struct speedParameters{
 	float sampleTime;
 	float sampleCounter;
 	float lastSpeed;
+	bool isMotorOn;
 };
 
 struct powerParameters{
@@ -82,6 +85,14 @@ void setSpeed(void);
 // Set a new requested speed
 void setRequestedSpeed(unsigned int speed);
 
+//return if the motor is running
+bool returnMotorStatus();
+
+//turn the motor on
+void turnMotorOn();
+
+//turn the motor off
+void turnMotorOff();
 
 
 /******************** POWER CONSUMPTION MEASUREMENT *****************/

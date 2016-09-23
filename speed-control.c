@@ -12,6 +12,8 @@
  #include "prototypes.h"
  struct speedParameters speedControl;
 
+ bool isMotorOn = 0;
+
  ISR(TIMER1_CAPT_vect){
 
 	 speedControl.timerCount = ICR1;
@@ -21,6 +23,21 @@
 	 TCNT1 = 0;
  }
 
+ bool returnMotorStatus(){
+	return isMotorOn;
+ }
+ 
+ void turnMotorOn(){
+	isMotorOn = 1;
+ }
+
+void turnMotorOff(){
+	isMotorOn = 0;
+}
+
+void initialiseStartMotorDC(void){
+	
+}
  void intialiseSpeedTimer(void){
 
 	 // Stop timer

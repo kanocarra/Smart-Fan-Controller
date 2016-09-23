@@ -7,7 +7,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
- 
+
 #include "prototypes.h"
 #include "state.h"
 #include "error.h"
@@ -41,6 +41,17 @@ State receiveData(){
 }
 
 State start(){
+
+	//check to see if motor is on
+	if(!(speedControl.isMotorOn)){
+		
+		//apply DC to 1x coil
+		TOCPMCOE |= (1<<TOCC3OE);
+
+		//when TCNT0 has reached 2^8 then increment 
+
+	}
+	
 	initialisePWM(F_PWM, 0.65, 1);
 	intialiseSpeedTimer();
 	initialiseUART();
