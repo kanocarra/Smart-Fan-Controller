@@ -32,14 +32,10 @@
 ISR(USART0_RX_vect){
 	
 	unsigned int rX_data = UDR0;
-	
-	packet.characters[packet.index] = rX_data;
 
 	switch (packet.index) {
-		case SOURCE_ID:
-			
+		case SOURCE_ID:			
 			packet.sourceId = rX_data;
-			
 			packet.index++;
 			break;
 
@@ -92,6 +88,7 @@ ISR(USART0_RX_vect){
 					packet.speedValues[0] = 0;
 					packet.speedValues[1] = 0;
 					packet.speedValues[2] = 0;
+					setRequestedSpeed(packet.requestedSpeed);
 					packet.transmissionComplete = 1;
 				} else if (packet.messageId == 63) {
 					packet.transmissionComplete = 1;
@@ -105,9 +102,7 @@ ISR(USART0_RX_vect){
 		default:
 			packet.index = 0;
 			packet.speedIndex = 0;
-			packet.messageId = 0;
 			packet.destinationId = 0;
-			packet.transmissionComplete = 0;
 	}
 }
 
@@ -125,7 +120,6 @@ void initialiseUART()
 	UBRR0L = ubrrValue;
 	
 	// Enabling the USART receiver and transmitter and enable receive interrupt
-	UCSR0B |= (1<<RXEN0) | (1<<TXEN0);
 
 	enableUART();
 	
@@ -167,10 +161,11 @@ void sendStatusReport(float speed, float power, unsigned int error) {
 
 void disableUART(void){
 	// Disable UART receive interrupt
-	UCSR0B &= ~(1<RXCIE0);
+	UCSR0B &= ~(1<RXCIE0) & ~(1<<RXEN0) & ~(1<<TXEN0);
+
 }
 
 void enableUART(void) {
 	// Enable UART receive interrupt
-	UCSR0B |= (1<<RXCIE0);
+	UCSR0B |= (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0);
 }

@@ -41,7 +41,6 @@ struct powerParameters{
 };
 
 struct communicationsPacket {
-	uint8_t characters[8];
 	uint8_t index;
 	uint8_t sourceId;
 	uint8_t destinationId;
