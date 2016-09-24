@@ -70,8 +70,8 @@ ISR(ANA_COMP0_vect)
 	 // Clear output compare mode channel enable register
 	 TOCPMCOE &= ~(TOCPMCOE);
 
-	 //Enable PWM Channel on TOCC5 first
-	 TOCPMCOE |= (1<<TOCC5OE);
+	 //Enable PWM Channel on TOCC3 first
+	 TOCPMCOE |= (1<<TOCC3OE);
 
 	 //clk pre-scaler = 1 & start timer
 	 TCCR2B |= (1<<CS20);
@@ -88,9 +88,6 @@ ISR(ANA_COMP0_vect)
 
 	 //Set hysteresis level of 50mV
 	 ACSR0B |= (1<<HSEL0) | (1<<HLEV0);
-
-	 //enable comparator output on PORTA7
-	 //ACSR0B |= (1<<ACOE0);
 
 	 //set rising edge and input capture enable
 	 ACSR0A |= (1<<ACIS01) | (1<<ACIS00) | (1<<ACIC0);

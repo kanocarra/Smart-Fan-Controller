@@ -16,8 +16,6 @@
 
 ISR(USART0_RX_vect){
 	
-	PORTA |= (1<< PORTA0); 
-	
 	unsigned int rX_data = UDR0;
 	
 	packet.characters[packet.index] = rX_data; 
@@ -45,8 +43,7 @@ ISR(USART0_RX_vect){
 
 void initialiseUART()
 {
-	DDRA |= (1<< PORTA0);
-	PORTA &= ~(1<< PORTA0); 
+	
 	// Set the UBRR value based on the baud rate and clock frequency 
 	unsigned int ubrrValue = ((F_CPU)/(BAUD*16)) - 1;
 
@@ -59,7 +56,7 @@ void initialiseUART()
 	UBRR0L = ubrrValue;
 	
 	// Enabling the USART receiver and transmitter and enable receive interrupt
-	UCSR0B |= (1<<RXEN0) | (1<<TXEN0) | (1 << RXCIE0);
+	UCSR0B |= (1<<RXEN0) | (1<<TXEN0); //| (1 << RXCIE0);
 
 	// Set frame size to 8-bits
 	UCSR0C |= (1<<UCSZ00) | (1<<UCSZ01);

@@ -12,8 +12,6 @@
  #include "prototypes.h"
  struct speedParameters speedControl;
 
- bool isMotorOn = 0;
-
  ISR(TIMER1_CAPT_vect){
 
 	 speedControl.timerCount = ICR1;
@@ -23,20 +21,30 @@
 	 TCNT1 = 0;
  }
 
- bool returnMotorStatus(){
-	return isMotorOn;
- }
- 
  void turnMotorOn(){
-	isMotorOn = 1;
+	speedControl.isMotorOn = 1;
  }
 
 void turnMotorOff(){
-	isMotorOn = 0;
+	speedControl.isMotorOn = 0;
 }
 
-void initialiseStartMotorDC(void){
+void initialiseStartMotorTimer(void){
+	//Ensure counter is stopped
+	TCCR0B &= ~(1<<CS02) & ~(1<<CS01) & ~(1<<CS00);
+
+	//Disable Timer0 Overflow Interrupt
+	TIMSK0 &= ~(TOIE0);
+
+	//Clearing overflow flag
+	TIFR0 |= (1<<TOV0);
 	
+	//Reset count
+	TCNT0 = 0;
+
+	//Start the timer with 1024 prescaler
+	TCCR0B |= (1<<CS00) | (1<<CS02);
+
 }
  void intialiseSpeedTimer(void){
 
@@ -61,7 +69,7 @@ void initialiseStartMotorDC(void){
 	 //Start timer with prescaler 64
 	 TCCR1B |= (1<<CS11) | (1<<CS10);
 
-	 speedControl.requestedSpeed = 2500;
+	 speedControl.requestedSpeed = 2000;
 	 speedControl.sampleTime = 0;
 	 speedControl.lastError = 0;
 	 speedControl.lastSpeed = 0;
@@ -152,4 +160,16 @@ void initialiseStartMotorDC(void){
 	speedControl.lastError = 0;
 	speedControl.errorSum = 0;
 	setSpeed();
+ }
+
+ void delaySeconds(unsigned int time){
+ 	int i;
+
+	unsigned int delay = 32 * time;
+	// Delay for about 4 seconds
+ 	for(i = 0; i < delay; i++){
+	 	while(!(TIFR0 & (1<<TOV0)));
+	 	TIFR0 |= (1<<TOV0);
+ 	}
+
  }

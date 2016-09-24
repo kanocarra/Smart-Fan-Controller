@@ -30,7 +30,7 @@ struct speedParameters{
 	float sampleTime;
 	float sampleCounter;
 	float lastSpeed;
-	bool isMotorOn;
+	unsigned int isMotorOn;
 };
 
 struct powerParameters{
@@ -93,6 +93,11 @@ void turnMotorOn();
 
 //turn the motor off
 void turnMotorOff();
+
+//initialise start motor timer
+void initialiseStartMotorTimer(void);
+
+void delaySeconds(unsigned int time);
 
 
 /******************** POWER CONSUMPTION MEASUREMENT *****************/

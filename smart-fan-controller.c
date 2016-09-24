@@ -23,6 +23,8 @@ int main(void)
 {	
 	
 	State currentState = start;
+	turnMotorOff();
+
 	//enable global interrupts
 	sei();
 	
@@ -32,7 +34,6 @@ int main(void)
 }
 
 State idle(){
-	//TransmitUART(power.RMScurrent);
 	return (State)idle;
 }
 
@@ -42,27 +43,40 @@ State receiveData(){
 
 State start(){
 
+
+	//select pin 13 as output
+	DDRA |= (1<<PORTA4);
+
 	//check to see if motor is on
 	if(!(speedControl.isMotorOn)){
 		
 		//apply DC to 1x coil
-		TOCPMCOE |= (1<<TOCC3OE);
+		PORTA |= (1<<PORTA4);
 
-		//when TCNT0 has reached 2^8 then increment 
+		//start timer
+		initialiseStartMotorTimer();
+		
+		//Delay for about 4 seconds
+		delaySeconds(4);
 
+		//Turn motor on
+		turnMotorOn();
 	}
-	
-	initialisePWM(F_PWM, 0.65, 1);
+
+	//turn DC off
+	PORTA &= ~(1<<PORTA4);
+
+	initialisePWM(F_PWM, 0.75, 1);
 	intialiseSpeedTimer();
 	initialiseUART();
 	//initialiseADC();
 	
-
+	
 	return (State)idle;
 }
 
 State changeDirection(){
-	return (State)changeDirection;
+	return (State)start;
 }
 
 State adjustSpeed(){
