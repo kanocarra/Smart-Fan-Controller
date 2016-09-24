@@ -99,7 +99,6 @@ ISR(USART0_RX_vect){
 			}
 			packet.index = 0;
 			packet.speedIndex = 0;
-			packet.messageId = 0;
 			packet.destinationId = 0;			
 			break;
 		
@@ -108,6 +107,7 @@ ISR(USART0_RX_vect){
 			packet.speedIndex = 0;
 			packet.messageId = 0;
 			packet.destinationId = 0;
+			packet.transmissionComplete = 0;
 	}
 }
 
@@ -125,8 +125,10 @@ void initialiseUART()
 	UBRR0L = ubrrValue;
 	
 	// Enabling the USART receiver and transmitter and enable receive interrupt
-	UCSR0B |= (1<<RXEN0) | (1<<TXEN0) | (1 << RXCIE0);
+	UCSR0B |= (1<<RXEN0) | (1<<TXEN0);
 
+	enableUART();
+	
 	// Set frame size to 8-bits
 	UCSR0C |= (1<<UCSZ00) | (1<<UCSZ01);
 
@@ -165,10 +167,10 @@ void sendStatusReport(float speed, float power, unsigned int error) {
 
 void disableUART(void){
 	// Disable UART receive interrupt
-	UCSR0B &= ~(1 << RXCIE0);
+	UCSR0B &= ~(1<RXCIE0);
 }
 
 void enableUART(void) {
 	// Enable UART receive interrupt
-	UCSR0B |= (1 << RXCIE0);
+	UCSR0B |= (1<<RXCIE0);
 }

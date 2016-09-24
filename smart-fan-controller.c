@@ -33,32 +33,36 @@ int main(void)
 
 State idle(){
 	//TransmitUART(power.RMScurrent);
-	return (State)receiveData();
+	if(packet.transmissionComplete){
+		return (State)receiveData();
+	} else {
+		return (State)idle();	
+	}
 }
 
 State receiveData(){
-
-	if(packet.transmissionComplete){
-		
-		switch(packet.messageId) {
+	switch(packet.messageId) {
 			
-			case 83:
+		case 83:
 			
 			//Disables UART until speed has been changed
 			disableUART();
 
 			//Set the new requested speed
-			setRequestedSpeed(packet.requestedSpeed);
+			setRequestedSpeed(packet.requestedSpeed);	
 			
 			// Reset transmission for a new frame
 			packet.transmissionComplete = 0;
+			
+			// Reset message ID
+			packet.messageId = 0;
 			
 			// Re-enable UART
 			enableUART();
 
 			break;
 			
-			case 63:
+		case 63:
 			//Disables UART until speed has been changed
 			disableUART();
 
@@ -70,26 +74,28 @@ State receiveData(){
 			
 			// Reset transmission for a new frame
 			packet.transmissionComplete = 0;
+				
+			// Reset message ID
+			packet.messageId = 0;
 			
 			// Re-enable UART
 			enableUART();
 
 			break;
-			default:
+		default:
 			packet.transmissionComplete = 0;
-		}
-
+			// Reset message ID
+			packet.messageId = 0;
 	}
-	return (State)receiveData;
+
+	
+	return (State)idle;
 }
 
 State start(){
 	initialisePWM(F_PWM, 0.65, 1);
 	intialiseSpeedTimer();
 	initialiseUART();
-	//initialiseADC();
-	
-
 	return (State)idle;
 }
 
