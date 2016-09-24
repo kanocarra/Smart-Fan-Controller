@@ -31,23 +31,22 @@
 
 ISR(USART0_RX_vect){
 	
-	PORTA |= (1<< PORTA0); 
-	
 	unsigned int rX_data = UDR0;
 	
 	packet.characters[packet.index] = rX_data;
-	packet.index++; 
 
 	switch (packet.index) {
 		case SOURCE_ID:
+			
 			packet.sourceId = rX_data;
+			
 			packet.index++;
 			break;
 
 		case DEST_ID:
 			packet.destinationId = rX_data;
 			
-			// Checks that the message is addressed to the smart fan
+			// Checks that the message is addressed to the smart fan otherwise ignores the packet
 			if (packet.destinationId == FAN_ID){
 				packet.index++;
 			} else {
@@ -56,16 +55,19 @@ ISR(USART0_RX_vect){
 			break;
 
 		case MESSAGE_ID:
+			// Stores the message ID
 			packet.messageId = rX_data;
 			packet.index++;
 			break;
 
 		case DATA0:
+			// If a new speed is requested
 			if(packet.messageId == 83){
 				packet.speedValues[packet.speedIndex] = rX_data;
 				packet.speedIndex++;
 				packet.index++;
-				
+			
+			// If status is requested	
 			} else if(packet.messageId == 63){
 				packet.index = LF;
 			}
@@ -111,8 +113,6 @@ ISR(USART0_RX_vect){
 
 void initialiseUART()
 {
-	DDRA |= (1<< PORTA0);
-	PORTA &= ~(1<< PORTA0); 
 	// Set the UBRR value based on the baud rate and clock frequency 
 	unsigned int ubrrValue = ((F_CPU)/(BAUD*16)) - 1;
 
