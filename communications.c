@@ -167,5 +167,6 @@ void disableUART(void){
 
 void enableUART(void) {
 	// Enable UART receive interrupt
+	packet.transmissionComplete = 0;
 	UCSR0B |= (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0);
 }

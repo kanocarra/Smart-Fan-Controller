@@ -23,8 +23,6 @@ int main(void)
 {	
 	
 	State currentState = start;
-	packet.transmissionComplete = 0;
-	disableUART();
 	//enable global interrupts
 	sei();
 	
@@ -34,12 +32,12 @@ int main(void)
 }
 
 State idle(){
-	//TransmitUART(power.RMScurrent);
-	//if(packet.transmissionComplete){
-		//return (State)receiveData();
-	//} else {
-		return (State)idle();	
-	//}
+	if(packet.transmissionComplete){
+		return (State)receiveData;
+	} else {
+		return (State)idle;
+	}
+	
 }
 
 State receiveData(){
@@ -62,7 +60,7 @@ State receiveData(){
 			enableUART();
 
 			break;
-			
+			//
 		case 63:
 			//Disables UART until speed has been changed
 			disableUART();

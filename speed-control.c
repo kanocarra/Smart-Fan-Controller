@@ -60,7 +60,6 @@
 		 speedControl.currentIndex++;
 	 } else {
 	   	 calculateAverageRpm();
-		 //sendSpeedRpm(speedControl.averageSpeed);
 		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/prescaler);
 		 setSpeed();
 		 speedControl.sampleCounter = 0;
