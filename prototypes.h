@@ -31,6 +31,7 @@ struct speedParameters{
 	float sampleCounter;
 	float lastSpeed;
 	unsigned int isMotorOn;
+	unsigned int isStartState;
 };
 
 struct powerParameters{
@@ -52,6 +53,7 @@ struct communicationsPacket {
 /*************************** PWM GENERATION **************************/
 /********************************************************************/
 
+//start PWM signal
 void initialisePWM(unsigned long frequency, float dutyCycle, unsigned int prescaler);
 
 // Hall Effect sensor
@@ -62,6 +64,9 @@ void initialisePWMtimer(void);
 
 // Adjust the PWM duty cycle
 void setDutyCycle(float gain);
+
+//stop PWM signal
+void uninitialisePWM(void);
 
 
 /************************* FAN SPEED CONTROL ************************/
@@ -97,7 +102,17 @@ void turnMotorOff();
 //initialise start motor timer
 void initialiseStartMotorTimer(void);
 
+//create DC delay
 void delaySeconds(unsigned int time);
+
+//initialise start motor comparator (rising edge)
+ void initialiseStartMotorComparator(void);
+
+ //get motor state
+ unsigned int getMotorState(void);
+
+ //change motor state
+ void changeMotorState(unsigned int state);
 
 
 /******************** POWER CONSUMPTION MEASUREMENT *****************/

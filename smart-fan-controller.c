@@ -24,6 +24,7 @@ int main(void)
 	
 	State currentState = start;
 	turnMotorOff();
+	speedControl.isStartState = 1;
 
 	//enable global interrupts
 	sei();
@@ -43,36 +44,48 @@ State receiveData(){
 
 State start(){
 
+	if(getMotorState()){
+		//select pin 13 as output
+		DDRA |= (1<<PORTA4);
 
-	//select pin 13 as output
-	DDRA |= (1<<PORTA4);
-
-	//check to see if motor is on
-	if(!(speedControl.isMotorOn)){
+		//check to see if motor is on
+		if(!(speedControl.isMotorOn)){
 		
-		//apply DC to 1x coil
-		PORTA |= (1<<PORTA4);
+			//apply DC to 1x coil
+			PORTA |= (1<<PORTA4);
 
-		//start timer
-		initialiseStartMotorTimer();
+			//start timer
+			initialiseStartMotorTimer();
 		
-		//Delay for about 4 seconds
-		delaySeconds(4);
+			//Delay for about 4 seconds
+			delaySeconds(4);
 
-		//Turn motor on
-		turnMotorOn();
+			//Turn motor on
+			turnMotorOn();
+
+			//turn DC off
+			PORTA &= ~(1<<PORTA4);
+		}
+
+		initialisePWM(F_PWM, 0.75, 1);
+
+		//an interrupt should trigger here
+
+		//return to start state and run the check again
+		return (State)start;
+	
+	}else{
+
+		//no longer in start state & correct rotation
+		initialisePWM(F_PWM, 0.75, 1);
+		intialiseSpeedTimer();
+		initialiseUART();
+		//initialiseADC();
+
+
+		return (State)idle;
 	}
-
-	//turn DC off
-	PORTA &= ~(1<<PORTA4);
-
-	initialisePWM(F_PWM, 0.75, 1);
-	intialiseSpeedTimer();
-	initialiseUART();
-	//initialiseADC();
 	
-	
-	return (State)idle;
 }
 
 State changeDirection(){

@@ -13,12 +13,11 @@
  struct speedParameters speedControl;
 
  ISR(TIMER1_CAPT_vect){
-
-	 speedControl.timerCount = ICR1;
-	 speedControl.sampleCounter += speedControl.timerCount;
-	 pidController();
-	 ICR1 = 0;
-	 TCNT1 = 0;
+		 speedControl.timerCount = ICR1;
+		 speedControl.sampleCounter += speedControl.timerCount;
+		 pidController();
+		 ICR1 = 0;
+		 TCNT1 = 0;
  }
 
  void turnMotorOn(){
@@ -27,7 +26,22 @@
 
 void turnMotorOff(){
 	speedControl.isMotorOn = 0;
+} 
+
+unsigned int getMotorState(void){
+	return speedControl.isStartState; 
 }
+
+void changeMotorState(unsigned int state){
+	if(state == 0){
+		//exit start state
+		speedControl.isStartState = 0;
+	}else{
+		//stay in start state
+		speedControl.isStartState = 1;
+	}
+}
+
 
 void initialiseStartMotorTimer(void){
 	//Ensure counter is stopped
@@ -46,6 +60,25 @@ void initialiseStartMotorTimer(void){
 	TCCR0B |= (1<<CS00) | (1<<CS02);
 
 }
+
+ void initialiseStartMotorComparator(void){
+
+	  // clear control and status register A
+	  ACSR0A &= ~(ACSR0A);
+
+	  // clear control and status register B
+	  ACSR0B &= ~(ACSR0B);
+
+	  //Set hysteresis level of 50mV
+	  ACSR0B |= (1<<HSEL0) | (1<<HLEV0);
+
+	  //set rising edge and input capture enable
+	  ACSR0A |= (1<<ACIS01) | (1<<ACIS00);
+
+	  //initialise interrupt enable
+	  ACSR0A |= (1<<ACIE0);
+ }
+
  void intialiseSpeedTimer(void){
 
 	 // Stop timer

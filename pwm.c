@@ -12,21 +12,46 @@
 
 struct pwmParameters pwm;
 
-ISR(ANA_COMP0_vect)
-{
-	//disable interrupts
-	ACSR0A &= ~(1<<ACIE0);
+ISR(ANA_COMP0_vect){
 
-	//Toggle between PWM channel
-	TOCPMCOE ^= (1<<TOCC3OE);
-	TOCPMCOE ^= (1<<TOCC5OE);
+	//1 = motor in start state else not
+	if(getMotorState()){
+		if(TCNT0 >= 195){
+			//DIRECTION CORRECT
+			//exit start motor procedure
+			changeMotorState(0);
 
-	//toggle between rising and falling
-	ACSR0A ^= (1<<ACIS00);
+			//turn timer 0 off
+			TCCR0B &= ~(1<<CS02) & ~(1<<CS01) & ~(1<<CS00);
+
+		}else{
+			//DIRECTION INCORRECT
+			//turn PWM off
+			uninitialisePWM();
+		 
+			//Toggle starting channels
+			TOCPMCOE ^= (1<<TOCC3OE);
+			TOCPMCOE ^= (1<<TOCC5OE);
+
+			//re-allow DC to motor
+			turnMotorOff();
+		}
+	 
+	}else{
+		//NOT IN START STATE
+		//disable interrupts
+		ACSR0A &= ~(1<<ACIE0);
+
+		//Toggle between PWM channel
+		TOCPMCOE ^= (1<<TOCC3OE);
+		TOCPMCOE ^= (1<<TOCC5OE);
+
+		//toggle between rising and falling
+		ACSR0A ^= (1<<ACIS00);
 	
-	//enable interrupts once service done
-	ACSR0A |= (1<<ACIE0);
-
+		//enable interrupts once service done
+		ACSR0A |= (1<<ACIE0);
+	}
 }
 
  void initialisePWM(unsigned long frequency, float dutyCycle, unsigned int prescaler) {
@@ -41,6 +66,17 @@ ISR(ANA_COMP0_vect)
 	// Initialise timer and analog comparator
 	initialisePWMtimer();
 	initialiseAnalogComparator();
+ }
+
+ void uninitialisePWM(void){
+	//stop PWM signal by re-setting all registers
+	TCCR2A &= ~(TCCR2A);
+	TCCR2B &= ~(TCCR2B);
+	TOCPMSA0 &= ~(TOCPMSA0);
+	TOCPMSA1 &= ~(TOCPMSA1);
+	TOCPMCOE &= ~(TOCPMCOE);
+	TCCR2B &= ~(TCCR2B);
+
  }
 
  void initialisePWMtimer(void){
@@ -71,7 +107,7 @@ ISR(ANA_COMP0_vect)
 	 TOCPMCOE &= ~(TOCPMCOE);
 
 	 //Enable PWM Channel on TOCC3 first
-	 TOCPMCOE |= (1<<TOCC3OE);
+	 TOCPMCOE |= (1<<TOCC5OE);
 
 	 //clk pre-scaler = 1 & start timer
 	 TCCR2B |= (1<<CS20);
