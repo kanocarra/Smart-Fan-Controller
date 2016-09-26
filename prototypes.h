@@ -16,6 +16,7 @@ struct pwmParameters {
 	float dutyCycle;
 	unsigned int prescaler;
 	uint16_t top;
+	unsigned int pinPwm;
 };
 
 struct speedParameters{
@@ -60,13 +61,19 @@ void initialisePWM(unsigned long frequency, float dutyCycle, unsigned int presca
 void initialiseAnalogComparator(void);
 
 //PWM waveform generation
-void initialisePWMtimer(void);
+void initialisePwmTimer(unsigned int);
 
 // Adjust the PWM duty cycle
 void setDutyCycle(float gain);
 
-//stop PWM signal
-void uninitialisePWM(void);
+//turn PWM off
+void stopPWM(void);
+
+//turn PWM on
+void startPWM(void);
+
+//change variable for initial high PWM channel
+void swapStartPinPWM(unsigned int pinPWM);
 
 
 /************************* FAN SPEED CONTROL ************************/

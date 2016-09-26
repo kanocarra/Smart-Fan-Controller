@@ -27,14 +27,19 @@ ISR(ANA_COMP0_vect){
 		}else{
 			//DIRECTION INCORRECT
 			//turn PWM off
-			uninitialisePWM();
-		 
-			//Toggle starting channels
-			TOCPMCOE ^= (1<<TOCC3OE);
-			TOCPMCOE ^= (1<<TOCC5OE);
+			stopPWM();
+
+			//allow opposite channel to be initialised
+			swapStartPinPWM(pwm.pinPwm);
+
+			//re-initialise PWM channels
+			initialisePwmTimer(pwm.pinPwm);
 
 			//re-allow DC to motor
 			turnMotorOff();
+
+			//stay in start state
+			changeMotorState(1);
 		}
 	 
 	}else{
@@ -63,23 +68,46 @@ ISR(ANA_COMP0_vect){
 
 	pwm.top = (F_CPU/(pwm.prescaler*pwm.frequency)) - 1;
 
-	// Initialise timer and analog comparator
-	initialisePWMtimer();
+	// initialise timer and analog comparator
+	initialisePwmTimer(pwm.pinPwm);
 	initialiseAnalogComparator();
  }
 
- void uninitialisePWM(void){
-	//stop PWM signal by re-setting all registers
-	TCCR2A &= ~(TCCR2A);
-	TCCR2B &= ~(TCCR2B);
+ void swapStartPinPWM(unsigned int pinPWM){
+	
+	if(pinPWM == 0){
+		pwm.pinPwm = 1;
+	}else{
+		pwm.pinPwm = 0;
+	}
+
+ }
+
+ void stopPWM(void){
+	//stop PWM signal
+	//reset output compare mux
 	TOCPMSA0 &= ~(TOCPMSA0);
 	TOCPMSA1 &= ~(TOCPMSA1);
+
+	//reset output channels
 	TOCPMCOE &= ~(TOCPMCOE);
+	
+	//reset/stop clock
 	TCCR2B &= ~(TCCR2B);
 
  }
 
- void initialisePWMtimer(void){
+ void startPWM(void){
+
+	//timer/counter output compare mux TOCC1
+	TOCPMSA0 |= (1<<TOCC3S1);
+	TOCPMSA1 |= (1<<TOCC5S1);
+
+	//clk pre-scaler = 1 & start timer
+	TCCR2B |= (1<<CS20);
+ }
+
+ void initialisePwmTimer(unsigned int pinPwm){
 
 	 //Adjust duty cycle
 	setDutyCycle(1);
@@ -99,20 +127,24 @@ ISR(ANA_COMP0_vect){
 	 TCCR2A |= (1<<COM2A1) | (1<<WGM21);
 	 TCCR2B |= (1<<WGM22) | (1<<WGM23);
 
-	 //timer/counter output compare mux TOCC1
-	 TOCPMSA0 |= (1<<TOCC3S1);
-	 TOCPMSA1 |= (1<<TOCC5S1);
-
 	 // Clear output compare mode channel enable register
 	 TOCPMCOE &= ~(TOCPMCOE);
 
-	 //Enable PWM Channel on TOCC3 first
-	 TOCPMCOE |= (1<<TOCC5OE);
-
-	 //clk pre-scaler = 1 & start timer
-	 TCCR2B |= (1<<CS20);
-
- }
+	//pinPWM = 0 for TOCC5
+	//pinPWM = 1 for TOCC3
+	if(pinPwm == 0){
+		
+		//enable PWM on TOCC5 first, and disable other
+		TOCPMCOE |= (1<<TOCC5OE);
+		TOCPMCOE &= ~(1<<TOCC3OE);
+	
+	}else{
+		
+		//enable PWM on TOCC3 first, and disable other
+		TOCPMCOE |= (1<<TOCC3OE);
+		TOCPMCOE &= (1<<TOCC5OE);
+	}
+}
 
  void initialiseAnalogComparator(void){
 

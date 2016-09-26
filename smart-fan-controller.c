@@ -22,9 +22,13 @@ extern struct communicationsPacket packet;
 int main(void)	
 {	
 	
+	//choose state
 	State currentState = start;
+
+	//initialise start motor variables
 	turnMotorOff();
 	speedControl.isStartState = 1;
+	pwm.pinPwm = 1;
 
 	//enable global interrupts
 	sei();
@@ -46,13 +50,13 @@ State start(){
 
 	if(getMotorState()){
 		//select pin 13 as output
-		DDRA |= (1<<PORTA4);
+		DDRA |= (1<<PORTA6);
 
 		//check to see if motor is on
 		if(!(speedControl.isMotorOn)){
 		
 			//apply DC to 1x coil
-			PORTA |= (1<<PORTA4);
+			PORTA |= (1<<PORTA6);
 
 			//start timer
 			initialiseStartMotorTimer();
@@ -64,22 +68,34 @@ State start(){
 			turnMotorOn();
 
 			//turn DC off
-			PORTA &= ~(1<<PORTA4);
+			PORTA &= ~(1<<PORTA6);
 		}
-
+		//set PWM up
 		initialisePWM(F_PWM, 0.75, 1);
 
-		//an interrupt should trigger here
+		//start PWM signal
+		startPWM();
+
+		// **an interrupt should trigger here**
 
 		//return to start state and run the check again
 		return (State)start;
 	
 	}else{
-
+		//START ENTIRE PROGRAME
 		//no longer in start state & correct rotation
 		initialisePWM(F_PWM, 0.75, 1);
+
+		//start PWM signal
+		startPWM();
+
+		//start speed timer
 		intialiseSpeedTimer();
+
+		//start UART communication
 		initialiseUART();
+
+		//start ADC 
 		//initialiseADC();
 
 
