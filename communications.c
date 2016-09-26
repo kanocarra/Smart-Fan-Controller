@@ -15,6 +15,9 @@
  struct communicationsPacket packet;
 
 ISR(USART0_RX_vect){
+
+
+
 	
 	PORTA |= (1<< PORTA0); 
 	
@@ -41,7 +44,10 @@ ISR(USART0_RX_vect){
 	}
 
 	packet.index++;
+	
+	
 }
+
 
 void initialiseUART()
 {

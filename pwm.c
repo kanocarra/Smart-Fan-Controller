@@ -14,6 +14,10 @@ struct pwmParameters pwm;
 
 ISR(ANA_COMP0_vect)
 {
+
+	 // Disable overflow interrupt Timer0
+	 TIMSK0 &= ~(1<<TOIE0);
+
 	//disable interrupts
 	ACSR0A &= ~(1<<ACIE0);
 
@@ -26,6 +30,9 @@ ISR(ANA_COMP0_vect)
 	
 	//enable interrupts once service done
 	ACSR0A |= (1<<ACIE0);
+
+ 	 // Enable overflow interrupt Timer0
+ 	 TIMSK0 |= (1<<TOIE0);
 
 }
 

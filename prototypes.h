@@ -28,6 +28,7 @@ struct speedParameters{
 	float sampleTime;
 	float sampleCounter;
 	float lastSpeed;
+	uint16_t sampleCount;
 };
 
 struct powerParameters{
@@ -82,6 +83,8 @@ void setSpeed(void);
 // Set a new requested speed
 void setRequestedSpeed(unsigned int speed);
 
+// Initialize Sample Time 
+ void  initialiseSampleTimer(void);
 
 
 /******************** POWER CONSUMPTION MEASUREMENT *****************/

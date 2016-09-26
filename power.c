@@ -28,11 +28,19 @@
 
 //interrupts here
 ISR(ADC_vect){
+
+	 // Disable overflow interrupt Timer0
+	 TIMSK0 &= ~(1<<TOIE0);
+
+
 	power.sqCurrentSum = power.sqCurrentSum + pow(ADC, 2);
 	numCConversions++;
+
+	 // Enable overflow interrupt Timer0
+	 TIMSK0 |= (1<<TOIE0);
 }
 
-ISR(TIMER0_OVF_vect){
+/*ISR(TIMER0_OVF_vect){
 	
 	//start free running
 	if(ADC_initialised){
@@ -56,7 +64,7 @@ ISR(TIMER0_OVF_vect){
 		getCurrent();
 	}
 
-}
+}*/
 
  void initialiseADCTimer(void){
 

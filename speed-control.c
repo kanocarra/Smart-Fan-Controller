@@ -14,12 +14,27 @@
 
  ISR(TIMER1_CAPT_vect){
 
+ 	 // Disable overflow interrupt Timer0
+ 	 TIMSK0 &= ~(1<<TOIE0);
+
 	 speedControl.timerCount = ICR1;
 	 speedControl.sampleCounter += speedControl.timerCount;
 	 pidController();
 	 ICR1 = 0;
 	 TCNT1 = 0;
+
+  	 // Enable overflow interrupt Timer0
+  	 TIMSK0 |= (1<<TOIE0);
+
  }
+
+ ISR(TIMER0_OVF_vect){
+
+	setSpeed();
+	TCNT0 = 255 - speedControl.sampleCount;
+
+ }
+
 
  void intialiseSpeedTimer(void){
 
@@ -42,12 +57,15 @@
 	 TIMSK1 |= (1<< ICIE1);
 
 	 //Start timer with prescaler 64
+
 	 TCCR1B |= (1<<CS11) | (1<<CS10);
 
 	 speedControl.requestedSpeed = 2500;
-	 speedControl.sampleTime = 0;
 	 speedControl.lastError = 0;
 	 speedControl.lastSpeed = 0;
+	
+	initialiseSampleTimer();
+
  }
 
  void pidController(void){
@@ -60,8 +78,6 @@
 		 speedControl.currentIndex++;
 	 } else {
 	   	 calculateAverageRpm();
-		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/prescaler);
-		 setSpeed();
 		 speedControl.sampleCounter = 0;
 		 speedControl.currentIndex = 0;
 
@@ -105,13 +121,13 @@
 
 	 float error = speedControl.requestedSpeed - speedControl.currentSpeed;
 
-	 speedControl.errorSum = (speedControl.errorSum + error) * speedControl.sampleTime;
+	 speedControl.errorSum = (speedControl.errorSum + error) * speedControl.sampleTime ;
 
 	 //clamp the integral term between 0 and 400 to prevent integral windup
 	// if(speedControl.errorSum > Max) speedControl.errorSum = Max;
 	 //else if(speedControl.errorSum < Min) speedControl.errorSum = Min;
 
-	 output = kP * error + (kI * speedControl.errorSum) - (kD * (speedControl.currentSpeed - speedControl.lastSpeed)/speedControl.sampleTime); 
+	 output = kP * error + (kI * speedControl.errorSum) - kD * (speedControl.currentSpeed - speedControl.lastSpeed)/speedControl.sampleTime; 
 	 
 	 //clamp the outputs between 0 and 400 to prevent windup
 	 if(output> Max) speedControl.errorSum = Max;
@@ -135,3 +151,28 @@
 	speedControl.errorSum = 0;
 	setSpeed();
  }
+
+ void initialiseSampleTimer(void){
+
+	speedControl.sampleTime = 0.001;
+
+	unsigned int prescaler = 64;
+	
+	speedControl.sampleCount = (F_CPU * speedControl.sampleTime)/prescaler;
+	
+	// Stop timer
+	TCCR0B &= ~(1<<CS02) & ~(1<<CS01) & ~(1<<CS00);
+	
+	//Reset count
+	TCNT0 = 255 - speedControl.sampleCount;
+	
+		
+	// Enable overflow interrupts
+	TIMSK0 |= (1<<TOIE0);
+
+	
+	//Start timer with prescaler 64
+
+	TCCR0B |= (1<<CS01) | (1<<CS00);
+	
+}
