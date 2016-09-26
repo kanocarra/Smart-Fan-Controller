@@ -12,6 +12,10 @@
  #define F_CPU 8000000UL
  #define FAN_ID 2
  #define SW_VERSION 1
+ #define END_PACKET 10
+  #define R 82
+ #define SPEED_REQUEST 83
+ #define STATUS_REQUEST 63
 
  #include "prototypes.h"
 
@@ -58,13 +62,13 @@ ISR(USART0_RX_vect){
 
 		case DATA0:
 			// If a new speed is requested
-			if(packet.messageId == 83){
+			if(packet.messageId == SPEED_REQUEST){
 				packet.speedValues[packet.speedIndex] = rX_data;
 				packet.speedIndex++;
 				packet.index++;
 			
 			// If status is requested	
-			} else if(packet.messageId == 63){
+			} else if(packet.messageId == STATUS_REQUEST){
 				packet.index = LF;
 			}
 			break;
@@ -82,13 +86,12 @@ ISR(USART0_RX_vect){
 			break;
 		
 		case LF:
-			if(rX_data == 10) {
+			if(rX_data == END_PACKET) {
 				if(packet.messageId == 83) {
 					packet.requestedSpeed = packet.speedValues[0] * 1000 + packet.speedValues[1] * 100 +  packet.speedValues[2] * 10;
 					packet.speedValues[0] = 0;
 					packet.speedValues[1] = 0;
 					packet.speedValues[2] = 0;
-					setRequestedSpeed(packet.requestedSpeed);
 					packet.transmissionComplete = 1;
 				} else if (packet.messageId == 63) {
 					packet.transmissionComplete = 1;
@@ -154,9 +157,37 @@ void sendCurrent(float RMScurrent){
 
 void sendStatusReport(float speed, float power, unsigned int error) {
 	uint8_t sendPacket[8];
+	sendPacket[SOURCE_ID] = FAN_ID;
+	sendPacket[DEST_ID] = packet.sourceId;
+	sendPacket[MESSAGE_ID] = R;
+	sendPacket[DATA0] = SW_VERSION;
+	float temp = 3200;
+	unsigned int factor = 1;
+	int index = DATA1;
+	unsigned int convertNumber = speed;
+	
 
-	sendPacket[0] = SW_VERSION;
-	 
+	//if(num % 1 != 0):
+	//decimal = num % 1
+	//print(decimal)
+
+	//num = int(num)
+
+	while(factor>1){
+		factor = factor/10;
+		sendPacket[index] = convertNumber/factor;
+		convertNumber = convertNumber % factor;
+		index++;
+	}
+	
+	index++;
+	sendPacket[index] = END_PACKET;
+	int i = 0;
+	while(i <= index){
+		TransmitUART(sendPacket[i]);
+		i++;
+	}
+	
 }
 
 void disableUART(void){

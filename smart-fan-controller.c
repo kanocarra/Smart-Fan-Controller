@@ -14,6 +14,8 @@
 
 #define F_CPU 8000000UL
 #define F_PWM 18000UL
+#define SPEED_REQUEST 83
+#define STATUS_REQUEST 63
 extern struct pwmParameters pwm;
 extern struct speedParameters speedControl;
 extern struct powerParameters power;
@@ -23,6 +25,7 @@ int main(void)
 {	
 	
 	State currentState = start;
+	errorStatus = NONE;
 	//enable global interrupts
 	sei();
 	
@@ -43,7 +46,7 @@ State idle(){
 State receiveData(){
 	switch(packet.messageId) {
 			
-		case 83:
+		case SPEED_REQUEST:
 			//Disables UART until speed has been changed
 			disableUART();
 			
@@ -58,15 +61,17 @@ State receiveData(){
 			
 			// Re-enable UART
 			enableUART();
+			
+			sendStatusReport(speedControl.currentSpeed, 1, errorStatus);
 
 			break;
 			//
-		case 63:
+		case STATUS_REQUEST:
 			//Disables UART until speed has been changed
 			disableUART();
 
 			float sendSpeed = speedControl.currentSpeed;
-			float sendPower = power.powerValue;
+			float sendPower = 1.05;
 			unsigned int error = errorStatus;
 
 			sendStatusReport(sendSpeed, sendPower, error);
@@ -82,6 +87,7 @@ State receiveData(){
 
 			break;
 		default:
+			// Set transmission as not complete
 			packet.transmissionComplete = 0;
 			// Reset message ID
 			packet.messageId = 0;

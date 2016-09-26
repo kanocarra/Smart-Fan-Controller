@@ -100,22 +100,26 @@
 	 float output;
 
 	 //Max PWM Output
-	 double Max = 444;
+	 double Max = 150;
 	 double Min = 0;
-
+	
 	 float error = speedControl.requestedSpeed - speedControl.currentSpeed;
-
+	 
+	 //if(error < -700){
+		 //error = -200;
+	 //}
+	 
 	 speedControl.errorSum = (speedControl.errorSum + error) * speedControl.sampleTime;
 
 	 //clamp the integral term between 0 and 400 to prevent integral windup
 	if(speedControl.errorSum > Max) speedControl.errorSum = Max;
 	else if(speedControl.errorSum < Min) speedControl.errorSum = Min;
-
+		
 	 output = kP * error + (kI * speedControl.errorSum) - (kD * (speedControl.currentSpeed - speedControl.lastSpeed)/speedControl.sampleTime); 
 	 
 	 //clamp the outputs between 0 and 400 to prevent windup
-	 if(output> Max) speedControl.errorSum = Max;
-	 else if(output < Min) speedControl.errorSum = Min;
+	 //if(output> max) output = max;
+	 //else if(output < min) output = min;
 
 	 speedControl.lastError = error;
 	 speedControl.lastSpeed = speedControl.currentSpeed;
