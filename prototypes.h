@@ -34,7 +34,10 @@ struct powerParameters{
 	float voltageSamples[10];
 	float currentSamples[10];
 	float sqCurrentSum;
+	float sqVoltageSum;
 	float RMScurrent;
+	float RMSvoltage;
+	float power;
 	float voltage;
 };
 
