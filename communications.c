@@ -16,8 +16,6 @@
 
 ISR(USART0_RX_vect){
 	
-	PORTA |= (1<< PORTA0); 
-	
 	unsigned int rX_data = UDR0;
 	
 	packet.characters[packet.index] = rX_data; 
@@ -45,8 +43,6 @@ ISR(USART0_RX_vect){
 
 void initialiseUART()
 {
-	DDRA |= (1<< PORTA0);
-	PORTA &= ~(1<< PORTA0); 
 	// Set the UBRR value based on the baud rate and clock frequency 
 	unsigned int ubrrValue = ((F_CPU)/(BAUD*16)) - 1;
 

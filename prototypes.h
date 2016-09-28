@@ -64,7 +64,7 @@ void setDutyCycle(float gain);
 /************************* FAN SPEED CONTROL ************************/
 /*******************************************************************/
 
-// Initialise timer to measure fan speed
+// Initialize timer to measure fan speed
 void intialiseSpeedTimer(void);
 
 // Calculate fan speed in rpm
@@ -81,6 +81,10 @@ void setSpeed(void);
 
 // Set a new requested speed
 void setRequestedSpeed(unsigned int speed);
+
+//Initialize Locked Rotor 
+void intialiseLockedRotor(void);
+
 
 
 

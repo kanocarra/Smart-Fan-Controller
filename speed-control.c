@@ -10,6 +10,7 @@
 
  #define F_CPU 8000000UL
  #include "prototypes.h"
+
  struct speedParameters speedControl;
 
  ISR(TIMER1_CAPT_vect){
@@ -21,30 +22,46 @@
 	 TCNT1 = 0;
  }
 
+ ISR(TIMER1_OVF_vect){
+
+	//Disable interrupt enable
+	ACSR0A &= ~(1<<ACIE0);
+
+ //Send error status 
+// errorStatus = LOCKED;
+ 
+ //Stop PWM Channels 
+
+ //Disable PWM Channel on TOCC3
+ TOCPMCOE &= ~(1<<TOCC3OE);
+
+ //Disable PWM Channel on TOCC5
+ TOCPMCOE &= ~(1<<TOCC5OE);
+
+ // Stop timer 1
+ TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
+
+ }
+
+
  void intialiseSpeedTimer(void){
 
 	 // Stop timer
 	 TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
 	 
-	 //Reset count
-	 TCNT1 = 0x0000;
-
 	 //Reset input capture register
 	 ICR1 = 0;
 
 	 //Set input capture on rising edge
 	 TCCR1B |= (1<<ICES1);
 	 
-	 // Disable overflow interrupts
-	 TIMSK1 &= ~(1<<TOIE1);
-
 	 //Enable input capture interrupt
 	 TIMSK1 |= (1<< ICIE1);
 
 	 //Start timer with prescaler 64
 	 TCCR1B |= (1<<CS11) | (1<<CS10);
 
-	 speedControl.requestedSpeed = 2500;
+	 speedControl.requestedSpeed = 300;
 	 speedControl.sampleTime = 0;
 	 speedControl.lastError = 0;
 	 speedControl.lastSpeed = 0;
@@ -135,4 +152,16 @@
 	speedControl.lastError = 0;
 	speedControl.errorSum = 0;
 	setSpeed();
+ }
+
+ void intialiseLockedRotor(void){
+
+
+	//Set Counter1 Count 
+	TCNT1 = 40535; 
+	//50RPM - 15535;
+
+	 // Enable overflow interrupts
+	 TIMSK1 |= (1<<TOIE1);
+
  }
