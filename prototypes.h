@@ -7,9 +7,6 @@
 
 #ifndef PROTOTYPES_H_
 #define PROTOTYPES_H_
-
-
-
 struct pwmParameters {
 	unsigned long frequency;
 	float dutyCycle;
@@ -48,6 +45,8 @@ struct communicationsPacket {
 	uint8_t speedValues[3];
 	uint8_t speedIndex;
 	uint8_t transmissionComplete;
+	uint8_t sendPacket[14];
+	uint8_t sendPacketIndex;
 	unsigned int requestedSpeed; 
 };
 
@@ -119,10 +118,12 @@ void initialiseUART();
 // Transmit the data over UART
 void TransmitUART(uint8_t TX_data);
 
-void sendStatusReport(float speed, float power, unsigned int error);
+void sendStatusReport(unsigned int requestedSpeed, float speed, float power, unsigned int error);
 
 void disableUART(void);
 
 void enableUART(void);
+
+void convertToPacket(unsigned int speed);
 
 #endif /* PROTOTYPES_H_ */

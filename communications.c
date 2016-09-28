@@ -19,6 +19,10 @@
 
  #include "prototypes.h"
 
+ #include "error.h"
+
+
+
  struct communicationsPacket packet;
 
   enum ByteReceived {
@@ -57,7 +61,15 @@ ISR(USART0_RX_vect){
 		case MESSAGE_ID:
 			// Stores the message ID
 			packet.messageId = rX_data;
-			packet.index++;
+						// If status is requested	
+			if(packet.messageId == STATUS_REQUEST){
+					packet.transmissionComplete = 1;
+					packet.index = LF;
+			} else {
+				packet.index++;
+			}
+			
+
 			break;
 
 		case DATA0:
@@ -66,11 +78,8 @@ ISR(USART0_RX_vect){
 				packet.speedValues[packet.speedIndex] = rX_data;
 				packet.speedIndex++;
 				packet.index++;
-			
-			// If status is requested	
-			} else if(packet.messageId == STATUS_REQUEST){
-				packet.index = LF;
 			}
+			
 			break;
 		
 		case DATA1:
@@ -93,9 +102,7 @@ ISR(USART0_RX_vect){
 					packet.speedValues[1] = 0;
 					packet.speedValues[2] = 0;
 					packet.transmissionComplete = 1;
-				} else if (packet.messageId == 63) {
-					packet.transmissionComplete = 1;
-				}
+				} 
 			}
 			packet.index = 0;
 			packet.speedIndex = 0;
@@ -155,36 +162,33 @@ void sendCurrent(float RMScurrent){
 	TransmitUART(tx_data);
 }
 
-void sendStatusReport(float speed, float power, unsigned int error) {
-	uint8_t sendPacket[8];
-	sendPacket[SOURCE_ID] = FAN_ID;
-	sendPacket[DEST_ID] = packet.sourceId;
-	sendPacket[MESSAGE_ID] = R;
-	sendPacket[DATA0] = SW_VERSION;
-	float temp = 3200;
-	unsigned int factor = 1;
-	int index = DATA1;
-	unsigned int convertNumber = speed;
+void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float power, unsigned int error) {
+	packet.sendPacket[SOURCE_ID] = FAN_ID;
+	packet.sendPacket[DEST_ID] = packet.sourceId;
+	packet.sendPacket[MESSAGE_ID] = R;
+	packet.sendPacket[DATA0] = SW_VERSION;
+	packet.sendPacketIndex = DATA1;
 	
-
-	//if(num % 1 != 0):
-	//decimal = num % 1
-	//print(decimal)
-
-	//num = int(num)
-
-	while(factor>1){
-		factor = factor/10;
-		sendPacket[index] = convertNumber/factor;
-		convertNumber = convertNumber % factor;
-		index++;
+	convertToPacket(requestedSpeed);
+	convertToPacket((unsigned int)currentSpeed);
+	
+	packet.sendPacket[packet.sendPacketIndex] = power;
+	packet.sendPacketIndex++;
+	
+	if(error == NONE){
+		packet.sendPacket[packet.sendPacketIndex] = '-';
+	} else if(error == LOCKED){
+		packet.sendPacket[packet.sendPacketIndex] = 'L';
+	} else if (error == BLOCKED){
+		packet.sendPacket[packet.sendPacketIndex] = 'B';
 	}
 	
-	index++;
-	sendPacket[index] = END_PACKET;
+	packet.sendPacketIndex++;
+	
+	packet.sendPacket[packet.sendPacketIndex] = END_PACKET;
 	int i = 0;
-	while(i <= index){
-		TransmitUART(sendPacket[i]);
+	while(i <= packet.sendPacketIndex){
+		TransmitUART(packet.sendPacket[i]);
 		i++;
 	}
 	
@@ -192,7 +196,7 @@ void sendStatusReport(float speed, float power, unsigned int error) {
 
 void disableUART(void){
 	// Disable UART receive interrupt
-	UCSR0B &= ~(1<RXCIE0) & ~(1<<RXEN0) & ~(1<<TXEN0);
+	UCSR0B &= ~(1<RXCIE0) & ~(1<<RXEN0);
 
 }
 
@@ -200,4 +204,21 @@ void enableUART(void) {
 	// Enable UART receive interrupt
 	packet.transmissionComplete = 0;
 	UCSR0B |= (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0);
+}
+
+void convertToPacket(unsigned int speed){
+		unsigned int factor = 10000;
+		unsigned int convertNumber = speed;
+
+		//if(num % 1 != 0):
+		//decimal = num % 1
+		//print(decimal)
+
+		//num = int(num)
+		while(factor>10){
+			factor = factor/10;
+			packet.sendPacket[packet.sendPacketIndex] = convertNumber/factor;
+			convertNumber = convertNumber % factor;
+			packet.sendPacketIndex++;
+		}
 }

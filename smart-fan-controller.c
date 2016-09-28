@@ -10,7 +10,10 @@
  
 #include "prototypes.h"
 #include "state.h"
+
 #include "error.h"
+
+
 
 #define F_CPU 8000000UL
 #define F_PWM 18000UL
@@ -20,12 +23,12 @@ extern struct pwmParameters pwm;
 extern struct speedParameters speedControl;
 extern struct powerParameters power;
 extern struct communicationsPacket packet;
+enum Errors errorStatus = NONE;
 
 int main(void)	
 {	
 	
 	State currentState = start;
-	errorStatus = NONE;
 	//enable global interrupts
 	sei();
 	
@@ -61,8 +64,6 @@ State receiveData(){
 			
 			// Re-enable UART
 			enableUART();
-			
-			sendStatusReport(speedControl.currentSpeed, 1, errorStatus);
 
 			break;
 			//
@@ -70,11 +71,9 @@ State receiveData(){
 			//Disables UART until speed has been changed
 			disableUART();
 
-			float sendSpeed = speedControl.currentSpeed;
-			float sendPower = 1.05;
+			float sendPower = 1;
 			unsigned int error = errorStatus;
-
-			sendStatusReport(sendSpeed, sendPower, error);
+			sendStatusReport(speedControl.currentSpeed, speedControl.requestedSpeed, sendPower, error);
 			
 			// Reset transmission for a new frame
 			packet.transmissionComplete = 0;
