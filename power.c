@@ -11,35 +11,39 @@
  #include <math.h>
  #include "prototypes.h"
 
- #define V_REF 5
- #define R_SHUNT	0.33
- #define ADC_RESOLUTION 1024
- #define ADC_V_CHANNEL 10 // I thought this one was 9
+ #define V_REF 5.0
+ #define R_SHUNT 0.33
+ #define ADC_RESOLUTION 1024.0
+ #define ADC_V_CHANNEL 10
  #define ADC_I_CHANNEL 11
- #define VDR_R1 56
- #define VDR_R2 22
- #define VDR_R3 82
+ #define VDR_R1 100.0
+ #define VDR_R2 56.0
 
  struct powerParameters power;
  //global variable
- int numCConversions = 0;
- int timerCycles = 0;
- int ADC_initialised = 1;
- int parameterCalculated = 0; //Nothing Calculated = 0, Current Calculated = 1, Voltage Calculated = 2
-
-//interrupts here
+ float numConversions = 0.0;
+ float timerCycles = 0.0;
+ int calculatedParameter = 0; //Nothing Calculated = 0, Current Calculated = 1, Voltage Calculated = 2
+ float gain = 35.5; //10.0;//(VDR_R1 + VDR_R2)/(VDR_R2);
+ 
+//Interrupts 
 ISR(ADC_vect){
 
-	switch(parameterCalculated){
+	switch(calculatedParameter){
 		
 		case 0:
-		power.sqCurrentSum = power.sqCurrentSum + pow(ADC, 2);
-		numCConversions++;
+		//calculate current
+		power.current = ((ADC * V_REF)/ADC_RESOLUTION)/R_SHUNT;
+		//TransmitUART((uint8_t)(power.current));
+		power.sqCurrentSum = power.sqCurrentSum + pow(power.current, 2.0);
+		numConversions++;
 		break;
 
 		case 1:
-		power.sqVoltageSum = power.sqVoltageSum + pow(ADC, 2);
-		numCConversions++;
+		//calculate original voltage
+		power.voltage = gain * ((ADC * V_REF)/ADC_RESOLUTION);
+		power.sqVoltageSum = power.sqVoltageSum + pow(power.voltage, 2.0);
+		numConversions++;
 		break;
 
 	}
@@ -48,56 +52,52 @@ ISR(ADC_vect){
 
 ISR(TIMER0_OVF_vect){
 	
-	/*if(ADMUXA == ADC_I_CHANNEL){
-		getCurrent();
-	}else if(ADMUXA == ADC_V_CHANNEL){
-		//getVoltage();
-	}*/
-
-	
-	if(timerCycles < 10){
+	if(timerCycles < 20){
 		timerCycles++;
 	}else{
 		//Disable ADC interrupts
 		ADCSRA &= ~(1<<ADIE);
+		//Stop ADC
+		ADCSRA &= ~(1<<ADSC);
 
-		switch(parameterCalculated){
+		switch(calculatedParameter){
 
 			case 0:
-			power.RMScurrent = (sqrt(power.sqCurrentSum/numCConversions) * 1000);
-			parameterCalculated = 1;
+			calcRMScurrent();
+			switchChannel(calculatedParameter);
+			calculatedParameter = 1;
 			break;
 
 			case 1:
-			power.RMSvoltage = sqrt(power.sqVoltageSum/numCConversions);
-			parameterCalculated = 2;
+			calcRMSvoltage();
+			switchChannel(calculatedParameter);
+			calculatedParameter = 2;
 			break;
 
 			case 2:
+			calcAveragePower();
+			calculatedParameter = 0;
+			break;
 
+		}
 
-	}
+	numConversions = 0.0;
+	timerCycles = 0.0;
+	}	
 
-		
-			
+	//Reset Count
+	TCNT0 = 200;
 
-		
-		sendCurrent(power.RMScurrent);
-		numCConversions = 0;
-		timerCycles = 0;
-		power.sqCurrentSum = 0;
-		TCNT0 = 200;
-		getCurrent();
-	}
-
+	//Enable ADC Interrupt and start ADC
+	ADCSRA |= (1<<ADIE);
+	ADCSRA |= (1<<ADSC);
 
 }
 
  void initialiseADC(void) {
 
 	 //Initialise DDRB - Set Port B as inputs
-	 DDRB &= ~(1<<PORTB0);
-	 DDRB &= ~(1<<PORTB3);
+	 DDRB &= ~(1<<PORTB0) & ~(1<<PORTB3);
 
 	 //Clears Power Reduction Register
 	 PRR &= ~(1<<PRADC);
@@ -113,7 +113,7 @@ ISR(TIMER0_OVF_vect){
 	 //Reference Voltage Selection (VCC)
 	 ADMUXB &= ~(ADMUXB);
 
-	 //Initial Channel - Current
+	 //Initial Channel - Current Sensing
 	 ADMUXA = ADC_I_CHANNEL;
 
 	 //Gain Selection (Gain of 20)
@@ -124,6 +124,7 @@ ISR(TIMER0_OVF_vect){
 
 	 initialiseADCTimer();
 
+	 //Start ADC
 	 ADCSRA |= (1<<ADSC);
 
  }
@@ -147,37 +148,49 @@ void initialiseADCTimer(void){
 
 }
 
-void getCurrent(void){
-	 
+void calcRMScurrent(void){
+	
+	power.RMScurrent = sqrt(power.sqCurrentSum/numConversions);
+	//sendCurrent(power.RMScurrent);
+	power.sqCurrentSum = 0.0;
 
-
-	 //calculate shunt current
-	 getADCValue(ADC_I_CHANNEL);
-	 //power.current = (ADC_ShuntVoltage * V_REF)/(ADC_RESOLUTION * R_SHUNT) * 1000;
-
-	 //disable gain
-	 ADMUXB &= ~(1<<GSEL0);
 }
 
-void getADCValue(uint8_t ADC_channel){
+void calcRMSvoltage(void){
 
-	 //Clearing the register to select right channel
-	 ADMUXA &= ~(ADMUXA);
+	 power.RMSvoltage = sqrt(power.sqVoltageSum/numConversions);
+	 power.sqVoltageSum = 0.0;
+	 TransmitUART((uint8_t)(power.RMSvoltage));
 
-	 //Reading from ADC_channel
-	 ADMUXA = ADC_channel;
+}
 
-	 //Start ADC Conversion
-	 ADCSRA |= (1<<ADSC);
+void calcAveragePower(void){
 
- }
+	power.averagePower = power.RMSvoltage * power.RMScurrent;
+	//TransmitUART((unsigned int)power.averagePower * 100);
 
- /*void getVoltage(void){
+}
 
-	 //calculate gain
-	 float gain = (VDR_R2 + VDR_R3)/(VDR_R1 + VDR_R2 + VDR_R3);
-	 //calculate supply voltage
-	 void ADC_Voltage = getADCValue(ADC_V_CHANNEL);
-	 power.voltage = (gain * ((ADC_Voltage * V_REF)/ADC_RESOLUTION)) * 10;
- }*/
 
+void switchChannel(int currentChannel){
+	
+	switch(currentChannel){
+		
+		//Switch to voltage sense channel
+		case 0:
+		//Gain Selection (Gain of 1)
+		ADMUXB &= ~(1<<GSEL0);
+		//Change ADC Channel
+		ADMUXA = ADC_V_CHANNEL;
+		break;
+
+		//Switch to current sense channel
+		case 1:
+		//Gain Selection (Gain of 1)
+		ADMUXB &= ~(1<<GSEL0);
+		//Change ADC Channel
+		ADMUXA = ADC_I_CHANNEL;
+		break;
+	}
+
+}

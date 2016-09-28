@@ -31,14 +31,13 @@ struct speedParameters{
 };
 
 struct powerParameters{
-	float voltageSamples[10];
-	float currentSamples[10];
+	float current;
+	float voltage;
 	float sqCurrentSum;
 	float sqVoltageSum;
 	float RMScurrent;
 	float RMSvoltage;
-	float power;
-	float voltage;
+	float averagePower;
 };
 
 struct communicationsPacket {
@@ -96,16 +95,21 @@ void initialiseADC(void);
 // Initialise timer for ADC
 void initialiseADCTimer(void);
 
-// Get the reading from the ADC
-void getADCValue(uint8_t ADC_channel);
-
 // Calculate voltage
-void getVoltage(void);
+void calcRMSvoltage(void);
 
-// Calculate current
-void getCurrent(void);
+// Calculate RMS current
+void calcRMScurrent(void);
 
+//Calculate Average Power
+void calcAveragePower(void);
+
+//Switches the ADC input channel and gain accordingly
+void switchChannel(int currentChannel);
+
+//Transmit the rms current value
 void sendCurrent(float RMScurrent);
+
 
 
 /**************************** COMMUNICATIONS ************************/
