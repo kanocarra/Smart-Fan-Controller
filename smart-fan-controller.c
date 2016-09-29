@@ -73,7 +73,7 @@ State receiveData(){
 
 			float sendPower = 1;
 			unsigned int error = errorStatus;
-			sendStatusReport(speedControl.currentSpeed, speedControl.requestedSpeed, sendPower, error);
+			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  sendPower, error);
 			
 			// Reset transmission for a new frame
 			packet.transmissionComplete = 0;
