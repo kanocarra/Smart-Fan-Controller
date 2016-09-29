@@ -107,8 +107,14 @@ void calcAveragePower(void);
 //Switches the ADC input channel and gain accordingly
 void switchChannel(int currentChannel);
 
-//Transmit the rms current value
+//Send the RMS current value
 void sendCurrent(float RMScurrent);
+
+//Send the RMS voltage value
+void sendVoltage(float RMSvoltage);
+
+//Send the average power value
+void sendPower(float averagePower);
 
 
 

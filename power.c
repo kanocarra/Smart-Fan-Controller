@@ -23,8 +23,8 @@
  //global variable
  float numConversions = 0.0;
  float timerCycles = 0.0;
- int calculatedParameter = 0; //Nothing Calculated = 0, Current Calculated = 1, Voltage Calculated = 2
- float gain = 35.5; //10.0;//(VDR_R1 + VDR_R2)/(VDR_R2);
+ int calculatedParameter = 0; //Nothing Calculated = 0, Current Calculated = 1, Current & Voltage Calculated = 2
+ float gain = 3.55; //10.0;//(VDR_R1 + VDR_R2)/(VDR_R2);
  
 //Interrupts 
 ISR(ADC_vect){
@@ -32,16 +32,16 @@ ISR(ADC_vect){
 	switch(calculatedParameter){
 		
 		case 0:
-		//calculate current
-		power.current = ((ADC * V_REF)/ADC_RESOLUTION)/R_SHUNT;
-		//TransmitUART((uint8_t)(power.current));
+		//calculate current flowing
+		power.current = ADC * (V_REF/ADC_RESOLUTION)/R_SHUNT;
+		//TransmitUART((uint8_t)power.current);
 		power.sqCurrentSum = power.sqCurrentSum + pow(power.current, 2.0);
 		numConversions++;
 		break;
 
 		case 1:
 		//calculate original voltage
-		power.voltage = gain * ((ADC * V_REF)/ADC_RESOLUTION);
+		power.voltage = gain * (ADC * (V_REF/ADC_RESOLUTION));
 		power.sqVoltageSum = power.sqVoltageSum + pow(power.voltage, 2.0);
 		numConversions++;
 		break;
@@ -159,15 +159,14 @@ void calcRMScurrent(void){
 void calcRMSvoltage(void){
 
 	 power.RMSvoltage = sqrt(power.sqVoltageSum/numConversions);
+	 //sendVoltage(power.RMSvoltage);
 	 power.sqVoltageSum = 0.0;
-	 TransmitUART((uint8_t)(power.RMSvoltage));
-
 }
 
 void calcAveragePower(void){
 
-	power.averagePower = power.RMSvoltage * power.RMScurrent;
-	//TransmitUART((unsigned int)power.averagePower * 100);
+	power.averagePower = (power.RMSvoltage * power.RMScurrent);
+	sendPower(power.averagePower);
 
 }
 
@@ -186,8 +185,8 @@ void switchChannel(int currentChannel){
 
 		//Switch to current sense channel
 		case 1:
-		//Gain Selection (Gain of 1)
-		ADMUXB &= ~(1<<GSEL0);
+		//Gain Selection (Gain of 20)
+		ADMUXB |= (1<<GSEL0);
 		//Change ADC Channel
 		ADMUXA = ADC_I_CHANNEL;
 		break;
