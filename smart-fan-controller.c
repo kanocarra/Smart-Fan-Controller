@@ -4,15 +4,18 @@
  * Created: 15/08/2016 4:11:57 p.m.
  * Author : emel269
  */ 
+
+ #define F_CPU 8000000UL
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
+#include <util/delay.h>
  
 #include "prototypes.h"
 #include "state.h"
 #include "error.h"
 
-#define F_CPU 8000000UL
+
 #define F_PWM 18000UL
 extern struct pwmParameters pwm;
 extern struct speedParameters speedControl;
@@ -42,9 +45,10 @@ State receiveData(){
 
 State start(){
 	initialisePWM(F_PWM, 0.65, 1);
-	intialiseLockedRotor();
 	intialiseSpeedTimer();
 	initialiseUART();
+	_delay_ms(1000);
+	intialiseLockedRotor();
 	//initialiseADC();
 	
 

@@ -10,36 +10,43 @@
 
  #define F_CPU 8000000UL
  #include "prototypes.h"
-
  struct speedParameters speedControl;
 
- ISR(TIMER1_CAPT_vect){
 
-	 speedControl.timerCount = ICR1;
+
+ ISR(TIMER1_CAPT_vect){
+	uint16_t count;
+
+	if(speedControl.lockedRotorDection) {
+		count = speedControl.lockedRotorCount;
+	} else {
+		count = 0;
+	}
+
+	speedControl.timerCount = ICR1 -count;
+	// speedControl.timerCount = ICR1;
 	 speedControl.sampleCounter += speedControl.timerCount;
 	 pidController();
 	 ICR1 = 0;
-	 TCNT1 = 0;
+	 TCNT1 =  count;
+	
  }
 
  ISR(TIMER1_OVF_vect){
 
-	//Disable interrupt enable
+	//Disable interrupt enable on Hall effect 
 	ACSR0A &= ~(1<<ACIE0);
 
- //Send error status 
-// errorStatus = LOCKED;
+	//Send error status 
+	// errorStatus = LOCKED;
  
- //Stop PWM Channels 
-
- //Disable PWM Channel on TOCC3
- TOCPMCOE &= ~(1<<TOCC3OE);
-
- //Disable PWM Channel on TOCC5
- TOCPMCOE &= ~(1<<TOCC5OE);
-
- // Stop timer 1
- TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
+	//Stop PWM Channels 
+	//Disable PWM Channel on TOCC3
+	TOCPMCOE &= ~(1<<TOCC3OE);
+	//Disable PWM Channel on TOCC5
+	TOCPMCOE &= ~(1<<TOCC5OE);
+	// Stop timer 1
+	TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
 
  }
 
@@ -61,15 +68,17 @@
 	 //Start timer with prescaler 64
 	 TCCR1B |= (1<<CS11) | (1<<CS10);
 
-	 speedControl.requestedSpeed = 300;
+	 speedControl.requestedSpeed = 2200;
 	 speedControl.sampleTime = 0;
 	 speedControl.lastError = 0;
 	 speedControl.lastSpeed = 0;
+	 speedControl.prescaler = 64;
+	 speedControl.lockedRotorDection = 0;
  }
 
  void pidController(void){
-	unsigned int prescaler = 64;
-	float mechanicalFrequency = (uint8_t)((F_CPU/prescaler)/speedControl.timerCount);
+
+	float mechanicalFrequency = (uint8_t)((F_CPU/speedControl.prescaler)/speedControl.timerCount);
 	speedControl.currentSpeed = ((mechanicalFrequency * 60)/3);
 
 	 if(speedControl.currentIndex < 10) {
@@ -78,7 +87,7 @@
 	 } else {
 	   	 calculateAverageRpm();
 		 sendSpeedRpm(speedControl.averageSpeed);
-		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/prescaler);
+		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/speedControl.prescaler);
 		 setSpeed();
 		 speedControl.sampleCounter = 0;
 		 speedControl.currentIndex = 0;
@@ -155,13 +164,16 @@
  }
 
  void intialiseLockedRotor(void){
+ 
+	float cutoffRMP = 100;
 
+	speedControl.lockedRotorCount =  65535-(uint16_t)(F_CPU/((cutoffRMP*3.0/60.0) * speedControl.prescaler));
+ 	
+	speedControl.lockedRotorDection = 1;
 
 	//Set Counter1 Count 
-	TCNT1 = 40535; 
-	//50RPM - 15535;
-
-	 // Enable overflow interrupts
-	 TIMSK1 |= (1<<TOIE1);
+	TCNT1 =  speedControl.lockedRotorCount; 
+	// Enable overflow interrupts
+	TIMSK1 |= (1<<TOIE1);
 
  }
