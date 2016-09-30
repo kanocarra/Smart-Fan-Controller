@@ -10,43 +10,112 @@
  #include <stdio.h>
  #define BAUD 9600UL
  #define F_CPU 8000000UL
+ #define FAN_ID 2
+ #define SW_VERSION 1
+ #define END_PACKET 10
+  #define R 82
+ #define SPEED_REQUEST 83
+ #define STATUS_REQUEST 63
+
  #include "prototypes.h"
+
+ #include "error.h"
 
  struct communicationsPacket packet;
 
+  enum ByteReceived {
+	  SOURCE_ID,
+	  DEST_ID,
+	  MESSAGE_ID,
+	  DATA0,
+	  DATA1,
+	  DATA2,
+	  LF
+  };
+
+  enum ByteReceived commStatus = SOURCE_ID;
+
 ISR(USART0_RX_vect){
 	
-	PORTA |= (1<< PORTA0); 
-	
 	unsigned int rX_data = UDR0;
-	
-	packet.characters[packet.index] = rX_data; 
 
-	if(packet.speedIndex == 3)
-	{
-		packet.index = 0;
-		packet.messageId = 0;
-		packet.speedIndex = 0;
-		unsigned int speed = packet.speedValues[0] * 1000 + packet.speedValues[1] * 100 +  packet.speedValues[2] * 10;
-		setRequestedSpeed(speed);
+	switch (packet.index) {
+		case SOURCE_ID:			
+			packet.sourceId = rX_data;
+			packet.index++;
+			break;
+
+		case DEST_ID:
+			packet.destinationId = rX_data;
+			
+			// Checks that the message is addressed to the smart fan otherwise ignores the packet
+			if (packet.destinationId == FAN_ID){
+				packet.index++;
+			} else {
+				packet.index = LF;
+			}
+			break;
+
+		case MESSAGE_ID:
+			// Stores the message ID
+			packet.messageId = rX_data;
+						// If status is requested	
+			if(packet.messageId == STATUS_REQUEST){
+					packet.transmissionComplete = 1;
+					packet.index = LF;
+			} else {
+				packet.index++;
+			}
+			
+
+			break;
+
+		case DATA0:
+			// If a new speed is requested
+			if(packet.messageId == SPEED_REQUEST){
+				packet.speedValues[packet.speedIndex] = rX_data;
+				packet.speedIndex++;
+				packet.index++;
+			}
+			
+			break;
+		
+		case DATA1:
+			packet.speedValues[packet.speedIndex] = rX_data;
+			packet.speedIndex++;
+			packet.index++;
+			break;
+		
+		case DATA2:
+			packet.speedValues[packet.speedIndex] = rX_data;
+			packet.speedIndex++;
+			packet.index++;
+			break;
+		
+		case LF:
+			if(rX_data == END_PACKET) {
+				if(packet.messageId == 83) {
+					packet.requestedSpeed = packet.speedValues[0] * 1000 + packet.speedValues[1] * 100 +  packet.speedValues[2] * 10;
+					packet.speedValues[0] = 0;
+					packet.speedValues[1] = 0;
+					packet.speedValues[2] = 0;
+					packet.transmissionComplete = 1;
+				} 
+			}
+			packet.index = 0;
+			packet.speedIndex = 0;
+			packet.destinationId = 0;			
+			break;
+		
+		default:
+			packet.index = 0;
+			packet.speedIndex = 0;
+			packet.destinationId = 0;
 	}
-
-	if(packet.index >= 3){
-		packet.speedValues[packet.index - 3] = rX_data;
-		packet.speedIndex++;
-	}
-
-	if(packet.index == 2){
-		packet.messageId = rX_data;	
-	}
-
-	packet.index++;
 }
 
 void initialiseUART()
 {
-	DDRA |= (1<< PORTA0);
-	PORTA &= ~(1<< PORTA0); 
 	// Set the UBRR value based on the baud rate and clock frequency 
 	unsigned int ubrrValue = ((F_CPU)/(BAUD*16)) - 1;
 
@@ -59,8 +128,8 @@ void initialiseUART()
 	UBRR0L = ubrrValue;
 	
 	// Enabling the USART receiver and transmitter and enable receive interrupt
-	UCSR0B |= (1<<RXEN0) | (1<<TXEN0); //| (1 << RXCIE0);
-
+	enableUART();
+	
 	// Set frame size to 8-bits
 	UCSR0C |= (1<<UCSZ00) | (1<<UCSZ01);
 
@@ -90,3 +159,62 @@ void sendCurrent(float RMScurrent){
 	TransmitUART(tx_data);
 }
 
+void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float power, unsigned int error) {
+	packet.sendPacket[SOURCE_ID] = FAN_ID;
+	packet.sendPacket[DEST_ID] = packet.sourceId;
+	packet.sendPacket[MESSAGE_ID] = R;
+	packet.sendPacket[DATA0] = SW_VERSION;
+	packet.sendPacketIndex = DATA1;
+	
+	convertToPacket(requestedSpeed);
+	convertToPacket((unsigned int)currentSpeed);
+	
+	packet.sendPacket[packet.sendPacketIndex] = power;
+	packet.sendPacketIndex++;
+	
+	if(error == NONE){
+		packet.sendPacket[packet.sendPacketIndex] = '-';
+	} else if(error == LOCKED){
+		packet.sendPacket[packet.sendPacketIndex] = 'L';
+	} else if (error == BLOCKED){
+		packet.sendPacket[packet.sendPacketIndex] = 'B';
+	}
+	
+	packet.sendPacketIndex++;
+	
+	packet.sendPacket[packet.sendPacketIndex] = END_PACKET;
+	int i = 0;
+	while(i <= packet.sendPacketIndex){
+		TransmitUART(packet.sendPacket[i]);
+		i++;
+	}
+	
+}
+
+void disableUART(void){
+	// Disable UART receive interrupt
+	UCSR0B &= ~(1<RXCIE0) & ~(1<<RXEN0);
+}
+
+void enableUART(void) {
+	// Enable UART receive interrupt
+	packet.transmissionComplete = 0;
+	UCSR0B |= (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0);
+}
+
+void convertToPacket(unsigned int speed){
+		unsigned int factor = 10000;
+		unsigned int convertNumber = speed;
+
+		//if(num % 1 != 0):
+		//decimal = num % 1
+		//print(decimal)
+
+		//num = int(num)
+		while(factor>10){
+			factor = factor/10;
+			packet.sendPacket[packet.sendPacketIndex] = convertNumber/factor;
+			convertNumber = convertNumber % factor;
+			packet.sendPacketIndex++;
+		}
+}
