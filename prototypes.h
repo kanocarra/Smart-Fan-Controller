@@ -26,6 +26,10 @@ struct speedParameters{
 	float sampleTime;
 	float sampleCounter;
 	float lastSpeed;
+	uint16_t lockedRotorCount;
+	unsigned int prescaler;
+	uint8_t lockedRotorDection;
+
 };
 
 struct powerParameters{
