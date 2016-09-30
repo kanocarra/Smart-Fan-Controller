@@ -21,8 +21,6 @@
 
  #include "error.h"
 
-
-
  struct communicationsPacket packet;
 
   enum ByteReceived {
@@ -130,7 +128,6 @@ void initialiseUART()
 	UBRR0L = ubrrValue;
 	
 	// Enabling the USART receiver and transmitter and enable receive interrupt
-
 	enableUART();
 	
 	// Set frame size to 8-bits
@@ -197,7 +194,6 @@ void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float pow
 void disableUART(void){
 	// Disable UART receive interrupt
 	UCSR0B &= ~(1<RXCIE0) & ~(1<<RXEN0);
-
 }
 
 void enableUART(void) {

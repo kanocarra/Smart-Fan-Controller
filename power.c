@@ -14,7 +14,7 @@
  #define V_REF 5
  #define R_SHUNT	0.33
  #define ADC_RESOLUTION 1024
- #define	ADC_V_CHANNEL 10
+ #define ADC_V_CHANNEL 10
  #define ADC_I_CHANNEL 11
  #define VDR_R1 56
  #define VDR_R2 22
