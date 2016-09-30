@@ -15,6 +15,5 @@ enum Errors {
 	BLOCKED
 };
 
-enum Errors errorStatus = NONE;
 
 #endif /* ERROR_H_ */
