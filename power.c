@@ -24,7 +24,6 @@
  float numConversions = 0.0;
  int pulseSample = 0;
  float timerCycles = 0.0;
- uint16_t ADCval;
  int calculatedParameter = 0; //Nothing Calculated = 0, Current Calculated = 1.
  float gain = 3.55; //(VDR_R1 + VDR_R2)/(VDR_R2);
  
@@ -70,7 +69,7 @@ ISR(ADC_vect){
 
 ISR(TIMER2_COMPB_vect){
 	
-	if(timerCycles < 10){
+	if(timerCycles < 21){
 		ADCSRA |= (1<<ADIE);
 		ADCSRA |= (1<<ADSC);
 		timerCycles++;
