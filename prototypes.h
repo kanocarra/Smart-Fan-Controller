@@ -92,9 +92,6 @@ void setRequestedSpeed(unsigned int speed);
 // Initialiase Analog to digital converter
 void initialiseADC(void);
 
-// Initialise timer for ADC
-void initialiseADCTimer(void);
-
 // Calculate voltage
 void calcRMSvoltage(void);
 
