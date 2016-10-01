@@ -24,6 +24,7 @@
  float numConversions = 0.0;
  int pulseSample = 0;
  float timerCycles = 0.0;
+ uint16_t ADCval;
  int calculatedParameter = 0; //Nothing Calculated = 0, Current Calculated = 1.
  float gain = 3.55; //(VDR_R1 + VDR_R2)/(VDR_R2);
  
@@ -33,8 +34,7 @@ ISR(ADC_vect){
 	switch(calculatedParameter){
 		
 		case 0:
-		//calculate current flowing
-		power.current = ((ADC * (V_REF/ADC_RESOLUTION))/20.0)/R_SHUNT;
+		power.current = ((float)(ADC) * (V_REF/ADC_RESOLUTION))/R_SHUNT;
 		power.sqCurrentSum = power.sqCurrentSum + pow(power.current, 2.0);
 		numConversions++;
 		pulseSample++;
@@ -50,8 +50,7 @@ ISR(ADC_vect){
 
 		case 1:
 		//calculate original voltage
-		power.voltage = gain * (ADC * (V_REF/ADC_RESOLUTION));
-		//sendVoltage(power.voltage);
+		power.voltage = gain * ((float)(ADC) * (V_REF/ADC_RESOLUTION));
 		power.sqVoltageSum = power.sqVoltageSum + pow(power.voltage, 2.0);
 		numConversions++;
 		pulseSample++;
@@ -135,7 +134,7 @@ ISR(TIMER2_COMPB_vect){
 void calcRMScurrent(void){
 	
 	power.RMScurrent = sqrt(power.sqCurrentSum/numConversions);
-	//sendCurrent(power.RMScurrent * 100000.0);
+	//sendCurrent(power.RMScurrent);
 	power.sqCurrentSum = 0.0;
 
 }
@@ -149,8 +148,8 @@ void calcRMSvoltage(void){
 
 void calcAveragePower(void){
 
-	power.averagePower = power.RMSvoltage * (power.RMScurrent * 100.0);
-	sendPower(power.averagePower);
+	power.averagePower = power.RMSvoltage * power.RMScurrent;
+	//sendPower(power.averagePower);
 
 }
 
