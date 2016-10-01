@@ -63,6 +63,7 @@ struct communicationsPacket {
 	uint8_t sendPacketIndex;
 	unsigned int requestedSpeed; 
 	uint8_t errorSent;
+	uint8_t transmissionStart;
 };
 
 /*************************** PWM GENERATION **************************/
@@ -149,8 +150,8 @@ void sendError(char errorType);
 
 void enableStartFrameDetection(void);
 
-void initialiseSleepMode(void);
-
 void initialiseWatchDogTimer(void);
+
+void turnOffWatchDogTimer(void);
 
 #endif /* PROTOTYPES_H_ */

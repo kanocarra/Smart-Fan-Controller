@@ -33,6 +33,11 @@
   };
 
   enum ByteReceived commStatus = SOURCE_ID;
+  
+ISR(WDT_vect){
+	sleep_disable();
+	turnOffWatchDogTimer();
+}
 
 ISR(USART0_RX_vect){
 	
@@ -117,6 +122,8 @@ ISR(USART0_START_vect){
 	
 	// Disable sleep mode
 	sleep_disable();
+	
+	packet.transmissionStart = 1;
 	
 }
 
@@ -246,13 +253,22 @@ void sendError(char errorType){
 
 void initialiseWatchDogTimer(void){
 	
-	// Write config change protection with Watch dog signature
+	// Write config change protection with watch dog signature
 	CCP = 0xD8;
+	
+	// Enable watchdog timer interrupt and set delay of 1s
+	WDTCSR |= (1<< WDIE) | (1<<WDP2) | (1<<WDP1);
 	
 	// CLear watchdog reset flag
 	MCUSR &= ~(1<< WDRF); 
 
+}
+
+void turnOffWatchDogTimer(void){
 	
-	// Enable watchdog timer interrupt and set delay of 1s
-	WDTCSR |= (1<< WDIE) | (1<<WDP2) | (1<<WDP1);
+	// Write config change protection with watch dog signature
+	CCP = 0xD8;
+	
+	// Clear watchdog
+	WDTCSR &= ~(WDTCSR);
 }

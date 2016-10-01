@@ -31,7 +31,6 @@ int main(void)
 	speedControl.currentSpeed = 0;
 	
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-	//initialiseSleepMode();
 	
 	//enable global interrupts
 	sei();
@@ -44,9 +43,6 @@ int main(void)
 	
 	// Sleep state
 	sleep_cpu();
-	
-	//Disable sleep once device has woken up
-	//sleep_disable();
 	
 	while (1) {	
 		currentState = (State)currentState();
@@ -84,6 +80,7 @@ State receiveData(){
 			} else {
 				return (State)controlSpeed;
 			}
+			packet.transmissionStart = 0;
 			break;
 			//
 		case STATUS_REQUEST:
@@ -100,6 +97,9 @@ State receiveData(){
 			// Reset message ID
 			packet.messageId = 0;
 			
+			//Clear transmission start
+			packet.transmissionStart = 0;
+			
 			// Re-enable UART
 			enableUART();
 
@@ -110,6 +110,8 @@ State receiveData(){
 			packet.transmissionComplete = 0;
 			// Reset message ID
 			packet.messageId = 0;
+			//Clear transmission start
+			packet.transmissionStart = 0;
 	}
 	return (State)idle;
 }
@@ -129,31 +131,36 @@ State changeDirection(){
 }
 
 State controlSpeed(){
-		if(packet.transmissionComplete){
+	
+	if(errorStatus == LOCKED) {
+		return (State)fanLocked;
+	} else if(errorStatus == BLOCKED) {
+		return (State)blockedDuct;	 	 
+	} else if(packet.transmissionComplete) {
 			return (State)receiveData;
-			} else if(errorStatus == LOCKED) {
-			if(!packet.errorSent){
-				return (State)fanLocked;
-				} else {
-				return (State)idle;
-			}
-			} else {
-			return (State)controlSpeed;
-		}
-	return (State)controlSpeed;
+	} else {
+		return(State)controlSpeed;
+	}
 }
 
 State fanLocked(){
+	
+	// Send error
 	sendError('L');
-	initialiseWatchDogTimer();
+	//initialiseWatchDogTimer();
 	
 	// Sleep the micro-controller
 	sleep_enable();
 	sleep_cpu();
 	
-	return (State)idle;
+	if(packet.transmissionStart) {
+		//turnOffWatchDogTimer();
+		return (State)idle;
+	} else {
+		return (State)fanLocked;
+	}
 } 
 
 State blockedDuct(){
-	return (State)sendStatus;
+	return (State)controlSpeed;
 }

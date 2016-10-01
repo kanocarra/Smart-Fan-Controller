@@ -10,6 +10,7 @@
 
  #define F_CPU 8000000UL
  #include "prototypes.h"
+ #include "error.h"
  struct speedParameters speedControl;
 
 
@@ -38,7 +39,7 @@
 	ACSR0A &= ~(1<<ACIE0);
 
 	//Send error status 
-	// errorStatus = LOCKED;
+	errorStatus = LOCKED;
  
 	//Stop PWM Channels 
 	//Disable PWM Channel on TOCC3
@@ -68,7 +69,6 @@
 	 //Start timer with prescaler 64
 	 TCCR1B |= (1<<CS11) | (1<<CS10);
 
-	 speedControl.requestedSpeed = 2200;
 	 speedControl.sampleTime = 0;
 	 speedControl.lastError = 0;
 	 speedControl.lastSpeed = 0;
