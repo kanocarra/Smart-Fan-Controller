@@ -15,7 +15,6 @@ State idle();
 State receiveData();
 State start();
 State changeDirection();
-State adjustSpeed();
 State controlSpeed();
 State fanLocked();
 State blockedDuct();

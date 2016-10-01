@@ -5,8 +5,18 @@
  *  Author: emel269
  */ 
 
+
 #ifndef PROTOTYPES_H_
 #define PROTOTYPES_H_
+
+enum Errors {
+	NONE,
+	LOCKED,
+	BLOCKED
+};
+
+enum Errors errorStatus;
+
 struct pwmParameters {
 	unsigned long frequency;
 	float dutyCycle;
@@ -52,6 +62,7 @@ struct communicationsPacket {
 	uint8_t sendPacket[14];
 	uint8_t sendPacketIndex;
 	unsigned int requestedSpeed; 
+	uint8_t errorSent;
 };
 
 /*************************** PWM GENERATION **************************/
@@ -133,5 +144,13 @@ void disableUART(void);
 void enableUART(void);
 
 void convertToPacket(unsigned int speed);
+
+void sendError(char errorType);
+
+void enableStartFrameDetection(void);
+
+void initialiseSleepMode(void);
+
+void initialiseWatchDogTimer(void);
 
 #endif /* PROTOTYPES_H_ */

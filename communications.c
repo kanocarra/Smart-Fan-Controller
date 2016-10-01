@@ -8,6 +8,7 @@
  #include <avr/io.h>
  #include <avr/interrupt.h>
  #include <stdio.h>
+ #include <avr/sleep.h>
  #define BAUD 9600UL
  #define F_CPU 8000000UL
  #define FAN_ID 2
@@ -18,8 +19,6 @@
  #define STATUS_REQUEST 63
 
  #include "prototypes.h"
-
- #include "error.h"
 
  struct communicationsPacket packet;
 
@@ -114,6 +113,13 @@ ISR(USART0_RX_vect){
 	}
 }
 
+ISR(USART0_START_vect){
+	
+	// Disable sleep mode
+	sleep_disable();
+	
+}
+
 void initialiseUART()
 {
 	// Set the UBRR value based on the baud rate and clock frequency 
@@ -135,6 +141,12 @@ void initialiseUART()
 
 	// Map Tx to PA7 and Rx to PB2
 	REMAP |= (1<<U0MAP);
+}
+
+void enableStartFrameDetection(void) {
+	
+	// Enable start frame detection and wake up from sleep modes on RX start
+	 UCSR0D |= (1<<SFDE0) | (1<<RXSIE0);
 }
 
 void TransmitUART(uint8_t TX_data)
@@ -188,6 +200,7 @@ void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float pow
 		TransmitUART(packet.sendPacket[i]);
 		i++;
 	}
+	packet.sendPacketIndex = 0;
 	
 }
 
@@ -217,4 +230,29 @@ void convertToPacket(unsigned int speed){
 			convertNumber = convertNumber % factor;
 			packet.sendPacketIndex++;
 		}
+}
+
+void sendError(char errorType){
+	packet.sendPacket[SOURCE_ID] = FAN_ID;
+	packet.sendPacket[DEST_ID] = packet.sourceId;
+	packet.sendPacket[MESSAGE_ID] = (uint8_t)errorType;
+	packet.sendPacket[3] = END_PACKET;
+	int i = 0;
+	while(i < 4){
+		TransmitUART(packet.sendPacket[i]);
+		i++;
+	}
+}
+
+void initialiseWatchDogTimer(void){
+	
+	// Write config change protection with Watch dog signature
+	CCP = 0xD8;
+	
+	// CLear watchdog reset flag
+	MCUSR &= ~(1<< WDRF); 
+
+	
+	// Enable watchdog timer interrupt and set delay of 1s
+	WDTCSR |= (1<< WDIE) | (1<<WDP2) | (1<<WDP1);
 }
