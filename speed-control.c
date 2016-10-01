@@ -42,6 +42,7 @@
 	errorStatus = LOCKED;
  
 	//Stop PWM Channels 
+	
 	//Disable PWM Channel on TOCC3
 	TOCPMCOE &= ~(1<<TOCC3OE);
 	//Disable PWM Channel on TOCC5
