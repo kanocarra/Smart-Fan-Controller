@@ -121,6 +121,9 @@ State start(){
 	initialisePWM(F_PWM, 0.65, 1);
 	intialiseSpeedTimer();
 	_delay_ms(1000);
+
+	intialiseBlockedDuct();
+
 	intialiseLockedRotor();
 	//initialiseADC();
 	return (State)controlSpeed();

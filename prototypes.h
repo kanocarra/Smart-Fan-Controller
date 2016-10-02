@@ -49,6 +49,7 @@ struct powerParameters{
 	float sqCurrentSum;
 	float RMScurrent;
 	float voltage;
+	float averagePower;
 };
 
 struct communicationsPacket {
@@ -65,6 +66,11 @@ struct communicationsPacket {
 	uint8_t errorSent;
 	uint8_t transmissionStart;
 };
+
+struct blockedParameters {
+	uint8_t powerSamples[241];
+};
+
 
 /*************************** PWM GENERATION **************************/
 /********************************************************************/
@@ -104,8 +110,6 @@ void setRequestedSpeed(unsigned int speed);
 
 //Initialize Locked Rotor 
 void intialiseLockedRotor(void);
-
-
 
 
 /******************** POWER CONSUMPTION MEASUREMENT *****************/
@@ -153,5 +157,14 @@ void enableStartFrameDetection(void);
 void initialiseWatchDogTimer(void);
 
 void turnOffWatchDogTimer(void);
+
+/**************************** BLOCKED DUCT CALIBRATION ************************/
+/*******************************************************************/
+
+//calibrate the power corresponding at different speeds
+void intialiseBlockedDuct(void);
+
+//check if the duct is blocked
+ uint8_t checkBlockDuct(float speed);
 
 #endif /* PROTOTYPES_H_ */
