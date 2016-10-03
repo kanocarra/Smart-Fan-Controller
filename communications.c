@@ -170,7 +170,7 @@ void TransmitUART(uint8_t TX_data)
 	
 }
 
-void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float power, unsigned int error) {
+void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float current, unsigned int error) {
 	packet.sendPacket[SOURCE_ID] = FAN_ID;
 	packet.sendPacket[DEST_ID] = packet.sourceId;
 	packet.sendPacket[MESSAGE_ID] = R;
@@ -179,8 +179,7 @@ void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float pow
 	
 	convertToPacket(requestedSpeed);
 	convertToPacket((unsigned int)currentSpeed);
-	
-	packet.sendPacket[packet.sendPacketIndex] = (uint8_t)(power * 10.0);
+	packet.sendPacket[packet.sendPacketIndex] = (uint8_t)(current * 1000.0);
 	packet.sendPacketIndex++;
 	
 	if(error == NONE){

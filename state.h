@@ -19,5 +19,6 @@ State controlSpeed();
 State fanLocked();
 State blockedDuct();
 State sendStatus();
+State calculatePower();
 
 #endif /* STATE_H_ */

@@ -44,6 +44,7 @@ ISR(ADC_vect){
 			ADCSRA &= ~(1<<ADSC);
 			//Reset the number of pulse samples back to 0
 			pulseSample = 0;
+			calculatedParameter = 1;
 		}
 		break;
 
@@ -60,6 +61,8 @@ ISR(ADC_vect){
 			ADCSRA &= ~(1<<ADSC);
 			//Reset the number of pulse samples back to 0
 			pulseSample = 0;
+			calculatedParameter = 0;
+			power.adcConversionComplete = 1;
 		}
 		break;
 
@@ -69,38 +72,15 @@ ISR(ADC_vect){
 
 ISR(TIMER2_COMPB_vect){
 	
-	if(power.sampleNumber == 10) {
-		if(timerCycles < 21){
-			power.sampleNumber = 0;
-			ADCSRA |= (1<<ADIE);
-			ADCSRA |= (1<<ADSC);
-			timerCycles++;
-			}else{
-
-			switch(calculatedParameter){
-
-				case 0:
-				calcRMScurrent();
-				switchChannel(calculatedParameter);
-				calculatedParameter = 1;
-				break;
-
-				case 1:
-				calcRMSvoltage();
-				switchChannel(calculatedParameter);
-				calcAveragePower();
-				calculatedParameter = 0;
-				break;
-			}
-
-			numConversions = 0.0;
-			timerCycles = 0.0;
-		}
-
+	if(timerCycles < 21 && !power.adcConversionComplete){
+		// Enable ADC interrupt
+		ADCSRA |= (1<<ADIE);
+		ADCSRA |= (1<<ADSC);
+		timerCycles++;
 	} else {
-		power.sampleNumber++;
+		numConversions = 0.0;
+		timerCycles = 0.0;
 	}
-
 }
 
  void initialiseADC(void) {
@@ -134,12 +114,13 @@ ISR(TIMER2_COMPB_vect){
 	 //Enable Timer2 Output Compare Interrupt
 	 TIMSK2 |= (1<<OCIE2B);
 
+	 power.adcConversionComplete = 0;
  }
 
 void calcRMScurrent(void){
-	
 	power.RMScurrent = sqrt(power.sqCurrentSum/numConversions);
 	power.sqCurrentSum = 0.0;
+	//sendCurrent(power.RMScurrent);
 }
 
 void calcRMSvoltage(void){

@@ -93,7 +93,7 @@
 		 speedControl.currentIndex = 0;
 	 }
 
-	 //check if the duct is blocked 
+	// check if the duct is blocked 
 	 //if(checkBlockDuct(speedControl.averageSpeed) ){
 			//errorStatus = BLOCKED ;
 			///***************SEND ERROR BLOCKED DUCT*************************/
@@ -139,9 +139,9 @@
 	
 	 float error = speedControl.requestedSpeed - speedControl.currentSpeed;
 	 
-	 //if(error < -700){
-		 //error = -200;
-	 //}
+	 if(error < -700){
+		 error = -200;
+	 }
 	 
 	 speedControl.errorSum = (speedControl.errorSum + error) * speedControl.sampleTime;
 

@@ -88,7 +88,7 @@ State receiveData(){
 			//Disables UART until speed has been changed
 			disableUART();
 
-			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  power.averagePower, errorStatus);
+			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  power.current, errorStatus);
 			
 			// Reset transmission for a new frame
 			packet.transmissionComplete = 0;
@@ -124,8 +124,8 @@ State start(){
 	_delay_ms(1000);
 
 	//intialiseBlockedDuct();
-
 	intialiseLockedRotor();
+	
 	//initialiseADC();
 	return (State)controlSpeed;
 }
@@ -141,7 +141,9 @@ State controlSpeed(){
 	} else if(errorStatus == BLOCKED) {
 		return (State)blockedDuct;	 	 
 	} else if(packet.transmissionComplete) {
-			return (State)receiveData;
+		return (State)receiveData;
+	} else if (power.adcConversionComplete) {
+		return (State)calculatePower;
 	} else {
 		return(State)controlSpeed;
 	}
@@ -172,5 +174,15 @@ State fanLocked(){
 } 
 
 State blockedDuct(){
+
+
+	return (State)controlSpeed;
+}
+
+State calculatePower() {
+	calcRMScurrent();
+	calcRMSvoltage();
+	calcAveragePower();
+	power.adcConversionComplete = 0;
 	return (State)controlSpeed;
 }
