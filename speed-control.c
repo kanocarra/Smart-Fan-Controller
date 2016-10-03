@@ -10,6 +10,7 @@
 
  #define F_CPU 8000000UL
  #include "prototypes.h"
+ #include "error.h"
  struct speedParameters speedControl;
 
 
@@ -38,7 +39,7 @@
 	ACSR0A &= ~(1<<ACIE0);
 
 	//Send error status 
-	// errorStatus = LOCKED;
+	errorStatus = LOCKED;
  
 	//Stop PWM Channels 
 	//Disable PWM Channel on TOCC3
@@ -68,7 +69,6 @@
 	 //Start timer with prescaler 64
 	 TCCR1B |= (1<<CS11) | (1<<CS10);
 
-	 speedControl.requestedSpeed = 2200;
 	 speedControl.sampleTime = 0;
 	 speedControl.lastError = 0;
 	 speedControl.lastSpeed = 0;
@@ -86,7 +86,6 @@
 		 speedControl.currentIndex++;
 	 } else {
 	   	 calculateAverageRpm();
-		 sendSpeedRpm(speedControl.averageSpeed);
 		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/speedControl.prescaler);
 		 setSpeed();
 		 speedControl.sampleCounter = 0;
@@ -134,11 +133,15 @@
 	 float output;
 
 	 //Max PWM Output
-	 double Max = 400;
+	 double Max = 150;
 	 double Min = 0;
-
+	
 	 float error = speedControl.requestedSpeed - speedControl.currentSpeed;
-
+	 
+	 //if(error < -700){
+		 //error = -200;
+	 //}
+	 
 	 speedControl.errorSum = (speedControl.errorSum + error) * speedControl.sampleTime;
 
 	 //clamp the integral term between 0 and 400 to prevent integral windup
@@ -148,8 +151,8 @@
 	 output = kP * error + (kI * speedControl.errorSum) - (kD * (speedControl.currentSpeed - speedControl.lastSpeed)/speedControl.sampleTime); 
 	 
 	 //clamp the outputs between 0 and 400 to prevent windup
-	 //if(output> Max) speedControl.errorSum = Max;
-	 //else if(output < Min) speedControl.errorSum = Min;
+	 //if(output> max) output = max;
+	 //else if(output < min) output = min;
 
 	 speedControl.lastError = error;
 	 speedControl.lastSpeed = speedControl.currentSpeed;
@@ -163,7 +166,7 @@
 	
 	// Changes requested speed
 	speedControl.requestedSpeed = speed;
-
+	
 	// Reset errors for controller
 	speedControl.lastError = 0;
 	speedControl.errorSum = 0;
@@ -182,7 +185,11 @@
 	TCNT1 =  speedControl.lockedRotorCount; 
 	// Enable overflow interrupts
 	TIMSK1 |= (1<<TOIE1);
+<<<<<<< HEAD
 
  }
 
 
+=======
+ }
+>>>>>>> 07f54c52ad25af896813e409aece194fc620ebbc

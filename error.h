@@ -9,12 +9,5 @@
 #ifndef ERROR_H_
 #define ERROR_H_
 
-enum Errors {
-	NONE,
-	LOCKED,
-	BLOCKED
-};
-
-enum Errors errorStatus = NONE;
 
 #endif /* ERROR_H_ */
