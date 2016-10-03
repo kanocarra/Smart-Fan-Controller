@@ -87,9 +87,7 @@ State receiveData(){
 			//Disables UART until speed has been changed
 			disableUART();
 
-			float sendPower = 1;
-			unsigned int error = errorStatus;
-			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  sendPower, error);
+			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  power.averagePower, errorStatus);
 			
 			// Reset transmission for a new frame
 			packet.transmissionComplete = 0;
@@ -120,9 +118,11 @@ State receiveData(){
 State start(){
 	initialisePWM(F_PWM, 0.65, 1);
 	intialiseSpeedTimer();
+	initialiseADC();
+
 	_delay_ms(1000);
 
-	intialiseBlockedDuct();
+	//intialiseBlockedDuct();
 
 	intialiseLockedRotor();
 	//initialiseADC();

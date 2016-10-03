@@ -93,10 +93,10 @@
 	 }
 
 	 //check if the duct is blocked 
-	 if(checkBlockDuct(speedControl.averageSpeed) ){
-			errorStatus = BLOCKED ;
-			/***************SEND ERROR BLOCKED DUCT*************************/
-	 }
+	 //if(checkBlockDuct(speedControl.averageSpeed) ){
+			//errorStatus = BLOCKED ;
+			///***************SEND ERROR BLOCKED DUCT*************************/
+	 //}
 
 
  }
@@ -185,11 +185,4 @@
 	TCNT1 =  speedControl.lockedRotorCount; 
 	// Enable overflow interrupts
 	TIMSK1 |= (1<<TOIE1);
-<<<<<<< HEAD
-
  }
-
-
-=======
- }
->>>>>>> 07f54c52ad25af896813e409aece194fc620ebbc
