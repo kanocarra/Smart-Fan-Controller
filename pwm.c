@@ -59,7 +59,7 @@ ISR(ANA_COMP0_vect)
 	 TCCR2A &= ~(TCCR2A);
 	 TCCR2B &= ~(TCCR2B);
 
-	 //Compare Output Mode, Fast PWM
+	 //Compare Output Mode, Fast PWM (Inverting Mode)
 	 TCCR2A |= (1<<COM2A1) | (1<<WGM21);
 	 TCCR2B |= (1<<WGM22) | (1<<WGM23);
 
@@ -103,4 +103,5 @@ ISR(ANA_COMP0_vect)
 	pwm.dutyCycle = gain * pwm.dutyCycle;
 	uint16_t compareCount = pwm.dutyCycle*pwm.top;
 	OCR2A = compareCount;
+	OCR2B = compareCount;
  }
