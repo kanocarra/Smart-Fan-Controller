@@ -271,7 +271,7 @@ void sendSpeedRpm(float averageSpeed){
 }
 
 void sendCurrent(float RMScurrent){
-	uint8_t tx_data = (uint8_t)(RMScurrent * 1000.0);
+	uint8_t tx_data = (uint8_t)(RMScurrent * 10000.0);
 	TransmitUART(tx_data);
 }
 

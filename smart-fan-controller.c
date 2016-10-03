@@ -26,9 +26,10 @@ extern struct communicationsPacket packet;
 int main(void)	
 {	
 	
-	State currentState = idle;
+	State currentState = start;
 	errorStatus = NONE;
 	speedControl.currentSpeed = 0;
+	speedControl.requestedSpeed = 2000;
 	
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
 	
@@ -39,10 +40,10 @@ int main(void)
 	enableStartFrameDetection();
 	
 	// Enable sleep
-	sleep_enable();
-	
-	// Sleep state
-	sleep_cpu();
+	//sleep_enable();
+	//
+	//// Sleep state
+	//sleep_cpu();
 	
 	while (1) {	
 		currentState = (State)currentState();

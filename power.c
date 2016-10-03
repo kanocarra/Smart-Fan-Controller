@@ -62,45 +62,38 @@ ISR(ADC_vect){
 			pulseSample = 0;
 		}
 		break;
-
 	}
 
 }
 
 ISR(TIMER2_COMPB_vect){
 	
-	if(power.sampleNumber == 10) {
-		if(timerCycles < 21){
-			power.sampleNumber = 0;
-			ADCSRA |= (1<<ADIE);
-			ADCSRA |= (1<<ADSC);
-			timerCycles++;
-			}else{
+	if(timerCycles < 21){
+		power.sampleNumber = 0;
+		ADCSRA |= (1<<ADIE);
+		ADCSRA |= (1<<ADSC);
+		timerCycles++;
+		}else{
 
-			switch(calculatedParameter){
+		switch(calculatedParameter){
 
-				case 0:
-				calcRMScurrent();
-				switchChannel(calculatedParameter);
-				calculatedParameter = 1;
-				break;
+			case 0:
+			calcRMScurrent();
+			switchChannel(calculatedParameter);
+			calculatedParameter = 1;
+			break;
 
-				case 1:
-				calcRMSvoltage();
-				switchChannel(calculatedParameter);
-				calcAveragePower();
-				calculatedParameter = 0;
-				break;
-			}
-
-			numConversions = 0.0;
-			timerCycles = 0.0;
+			case 1:
+			calcRMSvoltage();
+			switchChannel(calculatedParameter);
+			calcAveragePower();
+			calculatedParameter = 0;
+			break;
 		}
 
-	} else {
-		power.sampleNumber++;
+		numConversions = 0.0;
+		timerCycles = 0.0;
 	}
-
 }
 
  void initialiseADC(void) {
@@ -140,6 +133,7 @@ void calcRMScurrent(void){
 	
 	power.RMScurrent = sqrt(power.sqCurrentSum/numConversions);
 	power.sqCurrentSum = 0.0;
+	sendPower(power.RMScurrent);
 }
 
 void calcRMSvoltage(void){
