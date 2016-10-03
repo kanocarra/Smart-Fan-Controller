@@ -188,7 +188,7 @@ void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float pow
 	convertToPacket(requestedSpeed);
 	convertToPacket((unsigned int)currentSpeed);
 	
-	packet.sendPacket[packet.sendPacketIndex] = power;
+	packet.sendPacket[packet.sendPacketIndex] = (uint8_t)power;
 	packet.sendPacketIndex++;
 	
 	if(error == NONE){
