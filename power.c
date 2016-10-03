@@ -133,23 +133,17 @@ ISR(TIMER2_COMPB_vect){
 void calcRMScurrent(void){
 	
 	power.RMScurrent = sqrt(power.sqCurrentSum/numConversions);
-	//sendCurrent(power.RMScurrent);
 	power.sqCurrentSum = 0.0;
-
 }
 
 void calcRMSvoltage(void){
 
 	 power.RMSvoltage = sqrt(power.sqVoltageSum/numConversions);
-	 //sendVoltage(power.RMSvoltage);
 	 power.sqVoltageSum = 0.0;
 }
 
 void calcAveragePower(void){
-
 	power.averagePower = power.RMSvoltage * power.RMScurrent;
-	//sendPower(power.averagePower);
-
 }
 
 
