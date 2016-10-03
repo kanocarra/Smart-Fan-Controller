@@ -168,13 +168,5 @@ void switchChannel(int currentChannel){
 		break;
 	}
  }
- 
- void initialiseSleepMode(void){
-	// Set sleep mode to power-down
-	MCUCR |= (1 << SM1);
-	 	
-	// Turn off USART1
-	PRR |= (1<<PRUSART1);
-	
- } 
-}
+
+

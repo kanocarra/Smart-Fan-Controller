@@ -75,10 +75,11 @@ State receiveData(){
 			
 			// Re-enable UART
 			enableUART();
-			if(speedControl.currentSpeed == 0){
+
+			if(speedControl.requestedSpeed <= 0){
+				return (State)idle;
+			} else if(speedControl.currentSpeed == 0){
 				return (State)start;
-			} else {
-				return (State)controlSpeed;
 			}
 			packet.transmissionStart = 0;
 			break;
@@ -87,7 +88,7 @@ State receiveData(){
 			//Disables UART until speed has been changed
 			disableUART();
 
-			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  power.averagePower, errorStatus);
+			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  1, 0);
 			
 			// Reset transmission for a new frame
 			packet.transmissionComplete = 0;
@@ -111,7 +112,7 @@ State receiveData(){
 			//Clear transmission start
 			packet.transmissionStart = 0;
 	}
-	return (State)idle;
+	return (State)controlSpeed;
 }
 
 
