@@ -125,6 +125,10 @@ ISR(USART0_START_vect){
 	
 	packet.transmissionStart = 1;
 	
+	// Disable receive start interrupt
+	UCSR0D &= ~(1<<SFDE0) & ~(1<<RXSIE0);
+	
+	
 }
 
 void initialiseUART()
@@ -232,7 +236,7 @@ void convertToPacket(unsigned int speed){
 void sendError(char errorType){
 	packet.sendPacket[SOURCE_ID] = FAN_ID;
 	packet.sendPacket[DEST_ID] = packet.sourceId;
-	packet.sendPacket[MESSAGE_ID] = (uint8_t)errorType;
+	packet.sendPacket[MESSAGE_ID] = 76;
 	packet.sendPacket[3] = END_PACKET;
 	int i = 0;
 	while(i < 4){

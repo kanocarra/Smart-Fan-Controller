@@ -150,8 +150,14 @@ State fanLocked(){
 	
 	// Send error
 	sendError('L');
-	//initialiseWatchDogTimer();
 	
+	// Enable receive start interrupt
+	UCSR0D |= (1<<SFDE0) | (1<<RXSIE0);
+	
+	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+	
+	//initialiseWatchDogTimer();
+	sei();
 	// Sleep the micro-controller
 	sleep_enable();
 	sleep_cpu();
