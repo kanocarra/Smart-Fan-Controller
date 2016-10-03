@@ -38,7 +38,6 @@
 ISR(USART0_RX_vect){
 	
 	unsigned int rX_data = UDR0;
-
 	switch (packet.index) {
 		case SOURCE_ID:			
 			packet.sourceId = rX_data;
@@ -47,6 +46,7 @@ ISR(USART0_RX_vect){
 
 		case DEST_ID:
 			packet.destinationId = rX_data;
+			
 			
 			// Checks that the message is addressed to the smart fan otherwise ignores the packet
 			if (packet.destinationId == FAN_ID){
@@ -66,8 +66,6 @@ ISR(USART0_RX_vect){
 			} else {
 				packet.index++;
 			}
-			
-
 			break;
 
 		case DATA0:
@@ -159,7 +157,7 @@ void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float pow
 	convertToPacket(requestedSpeed);
 	convertToPacket((unsigned int)currentSpeed);
 	
-	packet.sendPacket[packet.sendPacketIndex] = power;
+	packet.sendPacket[packet.sendPacketIndex] = (uint8_t)(power * 10.0);
 	packet.sendPacketIndex++;
 	
 	if(error == NONE){

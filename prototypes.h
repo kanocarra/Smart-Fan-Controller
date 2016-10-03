@@ -7,6 +7,7 @@
 
 #ifndef PROTOTYPES_H_
 #define PROTOTYPES_H_
+
 struct pwmParameters {
 	unsigned long frequency;
 	float dutyCycle;
@@ -36,6 +37,7 @@ struct powerParameters{
 	float RMScurrent;
 	float RMSvoltage;
 	float averagePower;
+	uint8_t sampleNumber;
 };
 
 struct communicationsPacket {
