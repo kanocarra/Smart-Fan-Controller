@@ -40,6 +40,7 @@ struct powerParameters{
 	float sqCurrentSum;
 	float RMScurrent;
 	float voltage;
+	float averagePower;
 };
 
 struct communicationsPacket {
@@ -49,6 +50,11 @@ struct communicationsPacket {
 	unsigned int speedValues[3];
 	unsigned int speedIndex;
 };
+
+struct blockedParameters {
+	uint8_t powerSamples[241];
+};
+
 
 /*************************** PWM GENERATION **************************/
 /********************************************************************/
@@ -90,8 +96,6 @@ void setRequestedSpeed(unsigned int speed);
 void intialiseLockedRotor(void);
 
 
-
-
 /******************** POWER CONSUMPTION MEASUREMENT *****************/
 /*******************************************************************/
 
@@ -122,5 +126,14 @@ void initialiseUART();
 // Transmit the data over UART
 void TransmitUART(uint8_t TX_data);
 
+
+/**************************** BLOCKED DUCT CALIBRATION ************************/
+/*******************************************************************/
+
+//calibrate the power corresponding at different speeds
+void intialiseBlockedDuct(void);
+
+//check if the duct is blocked
+ uint8_t checkBlockDuct(float speed);
 
 #endif /* PROTOTYPES_H_ */

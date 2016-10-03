@@ -48,6 +48,9 @@ State start(){
 	intialiseSpeedTimer();
 	initialiseUART();
 	_delay_ms(1000);
+
+	intialiseBlockedDuct();
+
 	intialiseLockedRotor();
 	//initialiseADC();
 	
