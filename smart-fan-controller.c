@@ -88,7 +88,7 @@ State receiveData(){
 			//Disables UART until speed has been changed
 			disableUART();
 
-			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  1, 0);
+			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  power.averagePower, errorStatus);
 			
 			// Reset transmission for a new frame
 			packet.transmissionComplete = 0;
@@ -127,7 +127,7 @@ State start(){
 
 	intialiseLockedRotor();
 	//initialiseADC();
-	return (State)controlSpeed();
+	return (State)controlSpeed;
 }
 
 State changeDirection(){

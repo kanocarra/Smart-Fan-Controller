@@ -89,8 +89,6 @@ ISR(ANA_COMP0_vect)
 	 //Set hysteresis level of 50mV
 	 ACSR0B |= (1<<HSEL0) | (1<<HLEV0);
 
-
-
 	 //set rising edge and input capture enable
 	 ACSR0A |= (1<<ACIS01) | (1<<ACIS00) | (1<<ACIC0);
 

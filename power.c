@@ -69,31 +69,37 @@ ISR(ADC_vect){
 
 ISR(TIMER2_COMPB_vect){
 	
-	if(timerCycles < 21){
-		ADCSRA |= (1<<ADIE);
-		ADCSRA |= (1<<ADSC);
-		timerCycles++;
-	}else{
+	if(power.sampleNumber == 10) {
+		if(timerCycles < 21){
+			power.sampleNumber = 0;
+			ADCSRA |= (1<<ADIE);
+			ADCSRA |= (1<<ADSC);
+			timerCycles++;
+			}else{
 
-		switch(calculatedParameter){
+			switch(calculatedParameter){
 
-			case 0:
-			calcRMScurrent();
-			switchChannel(calculatedParameter);
-			calculatedParameter = 1;
-			break;
+				case 0:
+				calcRMScurrent();
+				switchChannel(calculatedParameter);
+				calculatedParameter = 1;
+				break;
 
-			case 1:
-			calcRMSvoltage();
-			switchChannel(calculatedParameter);
-			calcAveragePower();
-			calculatedParameter = 0;
-			break;
+				case 1:
+				calcRMSvoltage();
+				switchChannel(calculatedParameter);
+				calcAveragePower();
+				calculatedParameter = 0;
+				break;
+			}
+
+			numConversions = 0.0;
+			timerCycles = 0.0;
 		}
 
-	numConversions = 0.0;
-	timerCycles = 0.0;
-	}	
+	} else {
+		power.sampleNumber++;
+	}
 
 }
 

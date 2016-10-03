@@ -50,6 +50,7 @@ struct powerParameters{
 	float RMScurrent;
 	float RMSvoltage;
 	float averagePower;
+	uint8_t sampleNumber;
 };
 
 struct communicationsPacket {
