@@ -47,7 +47,7 @@ ISR(ANA_COMP0_vect)
 
 	 //Adjust duty cycle
 	setDutyCycle(1);
-	 
+
 	 //configure data direction register channel 0 as output "PA2" - port A1
 	 DDRA |= (1<<PORTA4);
 	 DDRA |= (1<<PORTA6);
@@ -62,6 +62,9 @@ ISR(ANA_COMP0_vect)
 	 //Compare Output Mode, Fast PWM (Inverting Mode)
 	 TCCR2A |= (1<<COM2A1) | (1<<WGM21);
 	 TCCR2B |= (1<<WGM22) | (1<<WGM23);
+
+	 TOCPMSA0 &= ~(TOCPMSA0);
+	 TOCPMSA1 &= ~(TOCPMSA1);
 
 	 //timer/counter output compare mux TOCC1
 	 TOCPMSA0 |= (1<<TOCC3S1);

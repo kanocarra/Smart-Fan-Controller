@@ -40,7 +40,6 @@ ISR(WDT_vect){
 }
 
 ISR(USART0_RX_vect){
-	
 	unsigned int rX_data = UDR0;
 	switch (packet.index) {
 		case SOURCE_ID:			
@@ -117,20 +116,19 @@ ISR(USART0_RX_vect){
 }
 
 ISR(USART0_START_vect){
-	
-	// Disable sleep mode
-	sleep_disable();
-	
+		
 	packet.transmissionStart = 1;
 	
 	// Disable receive start interrupt
-	UCSR0D &= ~(1<<SFDE0) & ~(1<<RXSIE0);
-	
-	
+	UCSR0D &= ~(1<<SFDE0) & ~(1<<RXSIE0);	
 }
 
 void initialiseUART()
-{
+{	
+	UCSR0B &= ~(UCSR0B);
+	UCSR0C &= ~(UCSR0C);
+	UBRR0 &= ~(UBRR0);
+
 	// Set the UBRR value based on the baud rate and clock frequency 
 	unsigned int ubrrValue = ((F_CPU)/(BAUD*16)) - 1;
 
@@ -246,23 +244,28 @@ void sendError(char errorType){
 void initialiseWatchDogTimer(void){
 	
 	// Write config change protection with watch dog signature
-	CCP = 0xD8;
-	
-	// Enable watchdog timer interrupt and set delay of 1s
-	WDTCSR |= (1<< WDIE) | (1<<WDP2) | (1<<WDP1);
-	
-	// CLear watchdog reset flag
-	MCUSR &= ~(1<< WDRF); 
-
+	//CCP = 0xD8;
+//
+	//MCUSR = 0;
+	//wdt_disable();
+//
+	//// Enable watchdog timer interrupt and set delay of 1s
+	//WDTCSR |= (1<< WDIE);
+	//
+	//// CLear watchdog reset flag
+	//MCUSR &= ~(1<< WDRF); 
 }
 
 void turnOffWatchDogTimer(void){
 	
 	// Write config change protection with watch dog signature
-	CCP = 0xD8;
-	
-	// Clear watchdog
-	WDTCSR &= ~(WDTCSR);
+	//CCP = 0xD8;
+	//
+	//// Clear watchdog
+	//WDTCSR &= ~(WDTCSR);
+//
+	//MCUSR = 0;
+	//wdt_disable();
 }
 
 void sendSpeedRpm(float averageSpeed){

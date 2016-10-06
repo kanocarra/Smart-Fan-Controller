@@ -40,8 +40,6 @@
 
 	//Send error status 
 	errorStatus = LOCKED;
- 
-	//Stop PWM Channels 
 	
 	//Disable PWM Channel on TOCC3
 	TOCPMCOE &= ~(1<<TOCC3OE);
@@ -56,7 +54,8 @@
  void intialiseSpeedTimer(void){
 
 	 // Stop timer
-	 TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
+	 TCCR1B &= ~(TCCR1B);
+	 TIMSK1 &=~(TIMSK1) ;
 	 
 	 //Reset input capture register
 	 ICR1 = 0;
@@ -65,7 +64,7 @@
 	 TCCR1B |= (1<<ICES1);
 	 
 	 //Enable input capture interrupt
-	 TIMSK1 |= (1<< ICIE1);
+	 TIMSK1 |= ( 1<< ICIE1);
 
 	 //Start timer with prescaler 64
 	 TCCR1B |= (1<<CS11) | (1<<CS10);
@@ -92,14 +91,6 @@
 		 speedControl.sampleCounter = 0;
 		 speedControl.currentIndex = 0;
 	 }
-
-	 //check if the duct is blocked 
-	 //if(checkBlockDuct(speedControl.averageSpeed) ){
-			//errorStatus = BLOCKED ;
-			///***************SEND ERROR BLOCKED DUCT*************************/
-	 //}
-
-
  }
 
  // Calculates the average RPM and clears the speed sample array

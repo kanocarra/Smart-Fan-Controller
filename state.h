@@ -18,6 +18,7 @@ State changeDirection();
 State controlSpeed();
 State fanLocked();
 State blockedDuct();
+State sleep();
 State sendStatus();
 
 #endif /* STATE_H_ */

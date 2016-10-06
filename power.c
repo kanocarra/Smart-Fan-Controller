@@ -133,7 +133,6 @@ void calcRMScurrent(void){
 	
 	power.RMScurrent = sqrt(power.sqCurrentSum/numConversions);
 	power.sqCurrentSum = 0.0;
-	sendPower(power.RMScurrent);
 }
 
 void calcRMSvoltage(void){

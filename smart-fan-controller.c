@@ -25,25 +25,15 @@ extern struct communicationsPacket packet;
 
 int main(void)	
 {	
-	
-	State currentState = start;
+	State currentState = sleep;
 	errorStatus = NONE;
 	speedControl.currentSpeed = 0;
-	speedControl.requestedSpeed = 2000;
+	speedControl.requestedSpeed = 0;
+	packet.transmissionStart = 0;
 	
-	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-	
-	//enable global interrupts
-	sei();
 	
 	initialiseUART();
 	enableStartFrameDetection();
-	
-	// Enable sleep
-	//sleep_enable();
-	//
-	//// Sleep state
-	//sleep_cpu();
 	
 	while (1) {	
 		currentState = (State)currentState();
@@ -78,16 +68,19 @@ State receiveData(){
 			enableUART();
 
 			if(speedControl.requestedSpeed <= 0){
-				return (State)idle;
+				return (State)sleep;
 			} else if(speedControl.currentSpeed == 0){
 				return (State)start;
 			}
+
 			packet.transmissionStart = 0;
 			break;
 			//
 		case STATUS_REQUEST:
 			//Disables UART until speed has been changed
 			disableUART();
+
+			_delay_ms(100);
 
 			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  power.averagePower, errorStatus);
 			
@@ -99,6 +92,8 @@ State receiveData(){
 			
 			//Clear transmission start
 			packet.transmissionStart = 0;
+			
+			_delay_ms(100);
 			
 			// Re-enable UART
 			enableUART();
@@ -120,7 +115,7 @@ State receiveData(){
 State start(){
 	initialisePWM(F_PWM, 0.65, 1);
 	intialiseSpeedTimer();
-	initialiseADC();
+	//initialiseADC();
 
 	_delay_ms(1000);
 
@@ -153,25 +148,37 @@ State fanLocked(){
 	// Send error
 	sendError('L');
 	
-	// Enable receive start interrupt
-	UCSR0D |= (1<<SFDE0) | (1<<RXSIE0);
-	
-	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+	_delay_ms(100);
+
+	// Transmission clear
+	packet.transmissionStart = 0;
+	speedControl.currentSpeed = 0;
+	speedControl.requestedSpeed = 0;
+	packet.transmissionStart = 0;
 	
 	//initialiseWatchDogTimer();
-	sei();
-	// Sleep the micro-controller
-	sleep_enable();
-	sleep_cpu();
+	enableStartFrameDetection();
+
+	return (State)sleep;
 	
-	if(packet.transmissionStart) {
-		//turnOffWatchDogTimer();
-		return (State)idle;
-	} else {
-		return (State)fanLocked;
-	}
 } 
 
 State blockedDuct(){
 	return (State)controlSpeed;
+}
+
+State sleep(){
+	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+	cli();
+	if (!packet.transmissionStart) {
+		sleep_enable();
+		sei();
+		sleep_cpu();
+		sleep_disable();
+		//Disable start packet interrupt
+		UCSR0D &= ~(1<<SFDE0) & ~(1<<RXSIE0);
+	}
+	//Enable global interrupts
+	sei();
+	return (State)idle;
 }
