@@ -6,6 +6,7 @@
  */ 
 
  #include <avr/io.h>
+ #include <util/delay.h>
  #include <avr/interrupt.h>
  #include <stdio.h>
  #include <avr/sleep.h>
@@ -35,8 +36,8 @@
   enum ByteReceived commStatus = SOURCE_ID;
   
 ISR(WDT_vect){
-	sleep_disable();
-	turnOffWatchDogTimer();
+	packet.errorSent = 0;
+	errorStatus = LOCKED;
 }
 
 ISR(USART0_RX_vect){
@@ -118,7 +119,8 @@ ISR(USART0_RX_vect){
 ISR(USART0_START_vect){
 		
 	packet.transmissionStart = 1;
-	
+	errorStatus = NONE;
+
 	// Disable receive start interrupt
 	UCSR0D &= ~(1<<SFDE0) & ~(1<<RXSIE0);	
 }
@@ -243,29 +245,21 @@ void sendError(char errorType){
 
 void initialiseWatchDogTimer(void){
 	
-	// Write config change protection with watch dog signature
-	//CCP = 0xD8;
-//
-	//MCUSR = 0;
-	//wdt_disable();
-//
-	//// Enable watchdog timer interrupt and set delay of 1s
-	//WDTCSR |= (1<< WDIE);
-	//
-	//// CLear watchdog reset flag
-	//MCUSR &= ~(1<< WDRF); 
-}
 
-void turnOffWatchDogTimer(void){
-	
+	//Clear watchdog flag
+	MCUSR &= ~(1<<WDRF);
+
 	// Write config change protection with watch dog signature
-	//CCP = 0xD8;
-	//
-	//// Clear watchdog
-	//WDTCSR &= ~(WDTCSR);
-//
-	//MCUSR = 0;
-	//wdt_disable();
+	CCP = 0xD8;
+
+	WDTCSR |= (1<<WDE);
+
+	//Delay of 1s
+	WDTCSR |= (1<< WDP1) | (1<<WDP2);
+
+	// Enable watchdog timer interrupt
+	WDTCSR |= (1<< WDIE) | (1<< WDE);
+
 }
 
 void sendSpeedRpm(float averageSpeed){
