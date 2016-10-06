@@ -69,7 +69,7 @@ ISR(ADC_vect){
 
 ISR(TIMER2_COMPB_vect){
 	
-	if(power.sampleNumber == 10) {
+	//if(power.sampleNumber == 10) {
 		if(timerCycles < 21){
 			power.sampleNumber = 0;
 			ADCSRA |= (1<<ADIE);
@@ -97,9 +97,9 @@ ISR(TIMER2_COMPB_vect){
 			timerCycles = 0.0;
 		}
 
-	} else {
-		power.sampleNumber++;
-	}
+	//} else {
+		//power.sampleNumber++;
+	//}
 
 }
 
@@ -140,16 +140,20 @@ void calcRMScurrent(void){
 	
 	power.RMScurrent = sqrt(power.sqCurrentSum/numConversions);
 	power.sqCurrentSum = 0.0;
+	sendCurrent(power.RMScurrent);
 }
 
 void calcRMSvoltage(void){
 
 	 power.RMSvoltage = sqrt(power.sqVoltageSum/numConversions);
 	 power.sqVoltageSum = 0.0;
+	 //sendVoltage(power.RMSvoltage);
 }
 
 void calcAveragePower(void){
 	power.averagePower = power.RMSvoltage * power.RMScurrent;
+	//sendPower(power.averagePower);
+
 }
 
 

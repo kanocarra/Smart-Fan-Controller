@@ -53,6 +53,14 @@ struct communicationsPacket {
 	unsigned int requestedSpeed; 
 };
 
+struct blockedParameters {
+	uint8_t  dutyCycleSamples[241] ;
+
+
+};
+
+
+
 /*************************** PWM GENERATION **************************/
 /********************************************************************/
 
