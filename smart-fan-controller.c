@@ -36,6 +36,10 @@ int main(void)
 	
 	initialiseUART();
 	enableStartFrameDetection();
+
+	if(errorStatus == LOCKED){
+		currentState = fanLocked;
+	}
 	
 	while (1) {	
 		currentState = (State)currentState();
@@ -159,6 +163,7 @@ State fanLocked(){
 	
 	_delay_ms(100);
 
+	packet.errorSent =1;
 
 	// Transmission clear
 	packet.transmissionStart = 0;
@@ -166,11 +171,9 @@ State fanLocked(){
 	speedControl.requestedSpeed = 0;
 	packet.transmissionStart = 0;
 	
-	//initialiseWatchDogTimer();
 	enableStartFrameDetection();
-
 	wdt_init();
-	wdt_enable(WDTO_1S);
+	initialiseWatchDogTimer();
 
 	return (State)sleep;
 	
@@ -193,5 +196,8 @@ State sleep(){
 	}
 	//Enable global interrupts
 	sei();
+	if(errorStatus == LOCKED){
+		return (State)fanLocked;
+	}
 	return (State)idle;
 }
