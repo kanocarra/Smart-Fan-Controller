@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <util/delay.h>
 #include <avr/sleep.h>
+#include <avr/wdt.h>
  
 #include "prototypes.h"
 #include "state.h"
@@ -23,6 +24,8 @@ extern struct speedParameters speedControl;
 extern struct powerParameters power;
 extern struct communicationsPacket packet;
 
+void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
+
 int main(void)	
 {	
 	State currentState = sleep;
@@ -30,7 +33,6 @@ int main(void)
 	speedControl.currentSpeed = 0;
 	speedControl.requestedSpeed = 0;
 	packet.transmissionStart = 0;
-	
 	
 	initialiseUART();
 	enableStartFrameDetection();
@@ -118,12 +120,19 @@ State start(){
 	//initialiseADC();
 
 	_delay_ms(1000);
-
 	//intialiseBlockedDuct();
 
 	intialiseLockedRotor();
 	//initialiseADC();
 	return (State)controlSpeed;
+}
+
+void wdt_init(void)
+{
+	MCUSR = 0;
+	wdt_disable();
+
+	return;
 }
 
 State changeDirection(){
@@ -150,6 +159,7 @@ State fanLocked(){
 	
 	_delay_ms(100);
 
+
 	// Transmission clear
 	packet.transmissionStart = 0;
 	speedControl.currentSpeed = 0;
@@ -158,6 +168,9 @@ State fanLocked(){
 	
 	//initialiseWatchDogTimer();
 	enableStartFrameDetection();
+
+	wdt_init();
+	wdt_enable(WDTO_1S);
 
 	return (State)sleep;
 	
