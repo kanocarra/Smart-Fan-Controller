@@ -12,6 +12,8 @@
  #include "prototypes.h"
  #include "error.h"
  struct speedParameters speedControl;
+   extern struct pwmParameters pwm;
+
 
 
 
@@ -69,6 +71,10 @@
 	 //Start timer with prescaler 64
 	 TCCR1B |= (1<<CS11) | (1<<CS10);
 
+<<<<<<< HEAD
+=======
+	 speedControl.requestedSpeed = 1500;
+>>>>>>> b23bc07db207900cff2a3c362258d2065959602f
 	 speedControl.sampleTime = 0;
 	 speedControl.lastError = 0;
 	 speedControl.lastSpeed = 0;
@@ -80,22 +86,25 @@
 
 	float mechanicalFrequency = (uint8_t)((F_CPU/speedControl.prescaler)/speedControl.timerCount);
 	speedControl.currentSpeed = ((mechanicalFrequency * 60)/3);
-
+	
 	 if(speedControl.currentIndex < 10) {
 		 speedControl.samples[speedControl.currentIndex] = speedControl.currentSpeed;
 		 speedControl.currentIndex++;
 	 } else {
 	   	 calculateAverageRpm();
-		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/speedControl.prescaler);
+		 speedControl.currentIndex = 0;
+		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/prescaler);
 		 setSpeed();
 		 speedControl.sampleCounter = 0;
-		 speedControl.currentIndex = 0;
-	 }
-	// check if the duct is blocked 
-	 //if(checkBlockDuct(speedControl.averageSpeed) ){
-			//errorStatus = BLOCKED ;
-			///***************SEND ERROR BLOCKED DUCT*************************/
-	 //}
+		 
+		//sendSpeedRpm(speedControl.currentSpeed);
+		if(speedControl.isCalibrated){
+			if(checkBlockDuct(speedControl.currentSpeed)){
+				
+			}
+		}
+	}
+
  }
 
  // Calculates the average RPM and clears the speed sample array
@@ -160,10 +169,8 @@
  }
 
  void setRequestedSpeed(unsigned int speed){
-	
 	// Changes requested speed
 	speedControl.requestedSpeed = speed;
-	
 	// Reset errors for controller
 	speedControl.lastError = 0;
 	speedControl.errorSum = 0;

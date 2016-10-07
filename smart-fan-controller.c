@@ -23,10 +23,11 @@ extern struct pwmParameters pwm;
 extern struct speedParameters speedControl;
 extern struct powerParameters power;
 extern struct communicationsPacket packet;
+enum Errors errorStatus = NONE;
 
 int main(void)	
 {	
-	
+
 	State currentState = sleep;
 	errorStatus = NONE;
 	speedControl.currentSpeed = 0;
@@ -34,7 +35,7 @@ int main(void)
 	packet.transmissionStart = 0;
 	packet.transmissionComplete = 0;
 	power.averagePower = 0;
-	power.ADCConversionComplete = 0;
+	speedControl.isCalibrated = 0;
 	
 	initialiseUART();
 	enableStartFrameDetection();
@@ -128,13 +129,14 @@ State receiveData(){
 
 
 State start(){
-	initialisePWM(F_PWM, 0.65, 1);
+	initialisePWM(F_PWM, 0.75, 1);
 	intialiseSpeedTimer();
-	//initialiseADC();
+	initialiseADC();
 
 	_delay_ms(1000);
 	//intialiseBlockedDuct();
 	intialiseLockedRotor();
+	intialiseBlockedDuct();
 	
 	return (State)controlSpeed;
 }

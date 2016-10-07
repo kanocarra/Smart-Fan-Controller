@@ -119,7 +119,7 @@ ISR(ADC_vect){
 	 ADMUXA &= ~(ADMUXA);
 
 	 //Disable Digital Input (Current Sense Input)
-	 //DIDR1 |= (1<<ADC11D);
+	 DIDR1 |= (1<<ADC11D);
 
 	 //Reference Voltage Selection (VCC)
 	 ADMUXB &= ~(ADMUXB);
@@ -135,8 +135,8 @@ ISR(ADC_vect){
 
 	 //Enable Timer2 Output Compare Interrupt
 	 TIMSK2 |= (1<<OCIE2B);
+ }
 
-}
 
 void switchChannel(int currentChannel){
 	

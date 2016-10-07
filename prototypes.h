@@ -39,6 +39,7 @@ struct speedParameters{
 	uint16_t lockedRotorCount;
 	unsigned int prescaler;
 	uint8_t lockedRotorDection;
+	uint8_t isCalibrated;
 
 };
 
@@ -74,6 +75,9 @@ struct blockedParameters {
 	uint8_t powerSamples[241];
 };
 
+struct blockedParameters {
+	
+};
 
 /*************************** PWM GENERATION **************************/
 /********************************************************************/
