@@ -190,7 +190,6 @@ void TransmitUART(uint8_t TX_data)
 
 	//Wait until transmit complete
 	while(!(UCSR0A & (1<<TXC0)));
-	enableReceiver();
 }
 
 void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float power, unsigned int error) {

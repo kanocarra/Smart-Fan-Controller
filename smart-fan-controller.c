@@ -28,8 +28,6 @@ int main(void)
 {	
 	
 	State currentState = sleep;
-	DDRA |= (1<<PORTA0);
-	PORTA &= ~(1<<PORTA0);
 	errorStatus = NONE;
 	speedControl.currentSpeed = 0;
 	speedControl.requestedSpeed = 0;
@@ -66,7 +64,8 @@ State receiveData(){
 	switch(packet.messageId) {
 			
 		case SPEED_REQUEST:
-			disableUART();
+			disableReceiver();
+			USART_Flush();
 			//Set the new requested speed
 			setRequestedSpeed(packet.requestedSpeed);	
 			
@@ -77,7 +76,7 @@ State receiveData(){
 			packet.messageId = 0;
 			
 			// Re-enable UART
-			enableUART();
+			enableReceiver();
 
 			if(speedControl.requestedSpeed <= 0){
 				return (State)sleep;
@@ -90,7 +89,8 @@ State receiveData(){
 			break;
 		
 		case STATUS_REQUEST:
-			disableUART();
+			disableReceiver();
+			USART_Flush();
 			_delay_ms(100);
 
 			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  power.averagePower, errorStatus);
@@ -105,8 +105,9 @@ State receiveData(){
 			packet.transmissionStart = 0;
 
 			_delay_ms(100);
-			enableUART();
-
+			USART_Flush();
+			enableReceiver();
+		
 			break;
 		
 		default:
@@ -142,6 +143,12 @@ void wdt_init(void)
 	return;
 }
 
+void USART_Flush( void )
+{
+	unsigned char dummy;
+	while ( UCSR0A & (1<<RXC0) ) dummy = UDR0;
+}
+
 State changeDirection(){
 	return (State)changeDirection;
 }
@@ -160,7 +167,7 @@ State controlSpeed(){
 }
 
 State fanLocked(){
-	
+	enableTransmitter();
 	// Send error
 	sendError('L');
 	
