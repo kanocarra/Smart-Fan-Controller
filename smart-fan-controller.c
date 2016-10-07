@@ -24,13 +24,14 @@ extern struct speedParameters speedControl;
 extern struct powerParameters power;
 extern struct communicationsPacket packet;
 enum Errors errorStatus = NONE;
+#include <avr/delay.h>
 
 int main(void)	
 {	
 	
 	State currentState = start;
-	speedControl.requestedSpeed = 300;
 	speedControl.currentSpeed = 0;
+	speedControl.isCalibrated = 0;
 	initialiseUART();
 	//enable global interrupts
 	sei();
@@ -96,7 +97,7 @@ State receiveData(){
 }
 
 State start(){
-	initialisePWM(F_PWM, 0.65, 1);
+	initialisePWM(F_PWM, 0.55, 1);
 	intialiseSpeedTimer();
 	intialiseBlockedDuct();
 	//initialiseADC();

@@ -44,7 +44,7 @@
 	 //Start timer with prescaler 64
 	 TCCR1B |= (1<<CS11) | (1<<CS10);
 
-	 speedControl.requestedSpeed = 2000;
+	 speedControl.requestedSpeed = 300;
 	 speedControl.sampleTime = 0;
 	 speedControl.lastError = 0;
 	 speedControl.lastSpeed = 0;
@@ -65,13 +65,14 @@
 		 speedControl.sampleCounter = 0;
 		 speedControl.currentIndex = 0;
 
+		 if(speedControl.isCalibrated){
+		 	speedControl.requestedSpeed = 1500;
+			//check blocked duct
+		 	//checkBlockDuct(speedControl.averageSpeed);
 
-		//check blocked duct
-		checkBlockDuct(speedControl.averageSpeed);
-		
+		 }
 
-
-		 		
+			 		
 	}
  }
 
@@ -137,11 +138,9 @@
  }
 
  void setRequestedSpeed(unsigned int speed){
-	
 	// Changes requested speed
 	speedControl.requestedSpeed = speed;
 	// Reset errors for controller
 	speedControl.lastError = 0;
 	speedControl.errorSum = 0;
-	setSpeed();
  }

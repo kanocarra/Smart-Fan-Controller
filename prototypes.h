@@ -27,6 +27,7 @@ struct speedParameters{
 	float sampleTime;
 	float sampleCounter;
 	float lastSpeed;
+	uint8_t isCalibrated;
 };
 
 struct powerParameters{
