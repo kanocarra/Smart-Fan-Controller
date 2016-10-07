@@ -125,7 +125,7 @@ State receiveData(){
 State start(){
 	initialisePWM(F_PWM, 0.65, 1);
 	intialiseSpeedTimer();
-	initialiseADC();
+	//initialiseADC();
 
 	_delay_ms(1000);
 	//intialiseBlockedDuct();

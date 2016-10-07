@@ -47,7 +47,7 @@ ISR(WDT_vect){
 }
 
 ISR(USART0_RX_vect){
-	cli();
+	//cli();
 	unsigned int rX_data = UDR0;
 	switch (packet.index) {
 
