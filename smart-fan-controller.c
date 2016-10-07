@@ -29,6 +29,9 @@ int main(void)
 {	
 	
 	State currentState = start;
+	speedControl.requestedSpeed = 300;
+	speedControl.currentSpeed = 0;
+	initialiseUART();
 	//enable global interrupts
 	sei();
 	
@@ -95,10 +98,7 @@ State receiveData(){
 State start(){
 	initialisePWM(F_PWM, 0.65, 1);
 	intialiseSpeedTimer();
-
-	//intialiseBlockedDuct();
-
-	initialiseUART();
+	intialiseBlockedDuct();
 	//initialiseADC();
 	return (State)idle;
 }

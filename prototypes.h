@@ -54,9 +54,7 @@ struct communicationsPacket {
 };
 
 struct blockedParameters {
-	uint8_t  dutyCycleSamples[241] ;
-
-
+	uint8_t dutyCycleSamples[241] ;
 };
 
 
@@ -144,5 +142,10 @@ void disableUART(void);
 void enableUART(void);
 
 void convertToPacket(unsigned int speed);
+
+void intialiseBlockedDuct(void);
+
+uint8_t checkBlockDuct(float speed);
+
 
 #endif /* PROTOTYPES_H_ */

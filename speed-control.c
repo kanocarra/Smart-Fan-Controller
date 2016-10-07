@@ -140,8 +140,8 @@
 	
 	// Changes requested speed
 	speedControl.requestedSpeed = speed;
-	
 	// Reset errors for controller
 	speedControl.lastError = 0;
 	speedControl.errorSum = 0;
+	setSpeed();
  }
