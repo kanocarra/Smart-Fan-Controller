@@ -158,9 +158,13 @@ void TransmitUART(uint8_t TX_data);
 
 void sendStatusReport(unsigned int requestedSpeed, float speed, float power, unsigned int error);
 
-void disableUART(void);
+void disableReceiver(void);
 
-void enableUART(void);
+void enableReceiver(void);
+
+void disableTransmitter(void);
+
+void enableTransmitter(void);
 
 void convertToPacket(unsigned int speed);
 
@@ -173,6 +177,8 @@ void initialiseWatchDogTimer(void);
 void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
 
 void turnOffWatchDogTimer(void);
+
+void USART_Flush( void );
 
 /**************************** BLOCKED DUCT CALIBRATION ************************/
 /*******************************************************************/
