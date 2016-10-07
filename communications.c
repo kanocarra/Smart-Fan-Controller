@@ -181,7 +181,7 @@ void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float pow
 
 void disableUART(void){
 	// Disable UART receive interrupt
-	UCSR0B &= ~(1<RXCIE0) & ~(1<<RXEN0);
+	UCSR0B &= ~(1<RXCIE0); //& ~(1<<RXEN0);
 }
 
 void enableUART(void) {

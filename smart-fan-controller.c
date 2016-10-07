@@ -97,7 +97,7 @@ State receiveData(){
 }
 
 State start(){
-	initialisePWM(F_PWM, 0.55, 1);
+	initialisePWM(F_PWM, 0.75, 1);
 	intialiseSpeedTimer();
 	intialiseBlockedDuct();
 	//initialiseADC();

@@ -11,6 +11,8 @@
  #define F_CPU 8000000UL
  #include "prototypes.h"
  struct speedParameters speedControl;
+   extern struct pwmParameters pwm;
+
 
  ISR(TIMER1_CAPT_vect){
 
@@ -44,7 +46,7 @@
 	 //Start timer with prescaler 64
 	 TCCR1B |= (1<<CS11) | (1<<CS10);
 
-	 speedControl.requestedSpeed = 300;
+	 speedControl.requestedSpeed = 1500;
 	 speedControl.sampleTime = 0;
 	 speedControl.lastError = 0;
 	 speedControl.lastSpeed = 0;
@@ -54,26 +56,28 @@
 	unsigned int prescaler = 64;
 	float mechanicalFrequency = (uint8_t)((F_CPU/prescaler)/speedControl.timerCount);
 	speedControl.currentSpeed = ((mechanicalFrequency * 60)/3);
-
+	
 	 if(speedControl.currentIndex < 10) {
 		 speedControl.samples[speedControl.currentIndex] = speedControl.currentSpeed;
 		 speedControl.currentIndex++;
 	 } else {
 	   	 calculateAverageRpm();
+		 speedControl.currentIndex = 0;
 		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/prescaler);
 		 setSpeed();
 		 speedControl.sampleCounter = 0;
-		 speedControl.currentIndex = 0;
+		 
+	//sendSpeedRpm(speedControl.currentSpeed);
+	if(speedControl.isCalibrated){
+		if(checkBlockDuct(speedControl.currentSpeed)){
 
-		 if(speedControl.isCalibrated){
-		 	speedControl.requestedSpeed = 1500;
-			//check blocked duct
-		 	//checkBlockDuct(speedControl.averageSpeed);
-
-		 }
-
-			 		
+			TransmitUART(99);
+		}
 	}
+
+
+
+		}
  }
 
  // Calculates the average RPM and clears the speed sample array
