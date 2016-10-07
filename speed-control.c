@@ -71,10 +71,6 @@
 	 //Start timer with prescaler 64
 	 TCCR1B |= (1<<CS11) | (1<<CS10);
 
-<<<<<<< HEAD
-=======
-	 speedControl.requestedSpeed = 1500;
->>>>>>> b23bc07db207900cff2a3c362258d2065959602f
 	 speedControl.sampleTime = 0;
 	 speedControl.lastError = 0;
 	 speedControl.lastSpeed = 0;
@@ -93,14 +89,16 @@
 	 } else {
 	   	 calculateAverageRpm();
 		 speedControl.currentIndex = 0;
-		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/prescaler);
+		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/speedControl.prescaler);
 		 setSpeed();
 		 speedControl.sampleCounter = 0;
 		 
 		//sendSpeedRpm(speedControl.currentSpeed);
 		if(speedControl.isCalibrated){
 			if(checkBlockDuct(speedControl.currentSpeed)){
-				
+				errorStatus = BLOCKED;
+			} else {
+				errorStatus = NONE;
 			}
 		}
 	}

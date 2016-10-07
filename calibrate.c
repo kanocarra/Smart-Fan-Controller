@@ -14,7 +14,6 @@
   extern struct speedParameters speedControl;
   //extern struct powerParameters power;
   extern struct pwmParameters pwm;
-  struct blockedParameters blockedControl;
   
 
 void intialiseBlockedDuct(){

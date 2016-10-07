@@ -71,14 +71,6 @@ struct communicationsPacket {
 
 };
 
-struct blockedParameters {
-	uint8_t powerSamples[241];
-};
-
-struct blockedParameters {
-	
-};
-
 /*************************** PWM GENERATION **************************/
 /********************************************************************/
 

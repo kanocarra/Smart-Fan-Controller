@@ -157,6 +157,7 @@ State controlSpeed(){
 	if(errorStatus == LOCKED) {
 		return (State)fanLocked;
 	} else if(errorStatus == BLOCKED) {
+		
 		return (State)blockedDuct;	 	 
 	} else if(packet.transmissionComplete) {
 		return (State)receiveData;
@@ -191,7 +192,8 @@ State fanLocked(){
 } 
 
 State blockedDuct(){
-
+	sendError('B');
+	_delay_ms(1000);
 	return (State)controlSpeed;
 }
 
