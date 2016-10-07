@@ -56,7 +56,6 @@ ISR(TIMER2_COMPB_vect){
 			ADCSRA &= ~(1<<ADSC);
 			//Disable Timer2 Output Compare Interrupt
 			TIMSK2 &= ~(1<<OCIE2B);
-			power.ADCConversionComplete = 1;
 			break;
 
 		}
@@ -165,16 +164,19 @@ void switchChannel(int currentChannel){
  void calcRMScurrent(void){
 	 power.RMScurrent = sqrt(power.sqCurrentSum/numConversions);
 	 power.sqCurrentSum = 0.0;
-	 //sendCurrent(power.RMScurrent);
+	 sendCurrent(power.RMScurrent);
  }
 
  void calcRMSvoltage(void){
 
 	 power.RMSvoltage = sqrt(power.sqVoltageSum/numConversions);
 	 power.sqVoltageSum = 0.0;
+
 	 //sendVoltage(power.RMSvoltage);
  }
 
  void calcAveragePower(void){
 	 power.averagePower = power.RMSvoltage * power.RMScurrent;
+	 power.ADCConversionComplete = 1;
+	 
  }

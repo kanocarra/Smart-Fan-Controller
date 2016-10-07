@@ -204,7 +204,7 @@ void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float pow
 	
 	convertToPacket(requestedSpeed);
 	convertToPacket((unsigned int)currentSpeed);
-	packet.sendPacket[packet.sendPacketIndex] = (uint8_t)(power * 10.0);
+	packet.sendPacket[packet.sendPacketIndex] = (uint8_t)(power*1000.0);
 	packet.sendPacketIndex++;
 	
 	if(error == NONE){
@@ -290,7 +290,7 @@ void sendSpeedRpm(float averageSpeed){
 }
 
 void sendCurrent(float RMScurrent){
-	uint8_t tx_data = (uint8_t)(RMScurrent * 1000.0);
+	uint8_t tx_data = (uint8_t)(RMScurrent * 100.0);
 	TransmitUART(tx_data);
 }
 

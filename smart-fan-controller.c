@@ -97,14 +97,16 @@ State receiveData(){
 			
 			disableReceiver();
 			initialiseADC();
-			
-			while(!conversionComplete){
-				conversionComplete = power.ADCConversionComplete;
-			}
+			//TransmitUART(8);
+			//while(conversionComplete == 0){
+				//conversionComplete = power.ADCConversionComplete;
+			//}
+			//TransmitUART(8);
+			//_delay_ms(100);
 			
 			power.ADCConversionComplete = 0;
 
-			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  power.averagePower, errorStatus);
+			//sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed, power.RMScurrent, errorStatus);
 
 			// Reset transmission for a new frame
 			packet.transmissionComplete = 0;
