@@ -165,6 +165,8 @@ void enableStartFrameDetection(void);
 
 void initialiseWatchDogTimer(void);
 
+void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
+
 void turnOffWatchDogTimer(void);
 
 /**************************** BLOCKED DUCT CALIBRATION ************************/

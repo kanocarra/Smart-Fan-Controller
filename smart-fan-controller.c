@@ -24,12 +24,11 @@ extern struct speedParameters speedControl;
 extern struct powerParameters power;
 extern struct communicationsPacket packet;
 
-void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
-
 int main(void)	
 {	
+	
 	State currentState = sleep;
-	//errorStatus = NONE;
+	errorStatus = NONE;
 	speedControl.currentSpeed = 0;
 	speedControl.requestedSpeed = 0;
 	packet.transmissionStart = 0;
@@ -174,6 +173,10 @@ State fanLocked(){
 	enableStartFrameDetection();
 	initialiseWatchDogTimer();
 
+	if(packet.transmissionStart == 1){
+		return (State)idle;
+	}
+
 	return (State)sleep;
 	
 } 
@@ -195,6 +198,7 @@ State sleep(){
 	}
 	//Enable global interrupts
 	sei();
+
 	if(errorStatus == LOCKED){
 		return (State)fanLocked;
 	}

@@ -5,13 +5,15 @@
  *  Author: emel269
  */ 
 
+  #define BAUD 9600UL
+  #define F_CPU 8000000UL
+
  #include <avr/io.h>
  #include <util/delay.h>
  #include <avr/interrupt.h>
  #include <stdio.h>
  #include <avr/sleep.h>
- #define BAUD 9600UL
- #define F_CPU 8000000UL
+ #include <avr/wdt.h>
  #define FAN_ID 2
  #define SW_VERSION 1
  #define END_PACKET 10
@@ -36,8 +38,13 @@
   enum ByteReceived commStatus = SOURCE_ID;
   
 ISR(WDT_vect){
-	packet.errorSent = 0;
-	errorStatus = LOCKED;
+	if(packet.transmissionStart){
+		errorStatus = NONE;
+	} else {
+		packet.errorSent = 0;
+		errorStatus = LOCKED;
+	}
+
 }
 
 ISR(USART0_RX_vect){
@@ -118,6 +125,15 @@ ISR(USART0_RX_vect){
 
 ISR(USART0_START_vect){
 		
+	if(errorStatus == LOCKED){
+		errorStatus = NONE;
+		//Turn off watchdog timer
+		WDTCSR &= ~(WDTCSR);
+		wdt_enable(WDTO_15MS);
+		//Wait for watchdog to put device to sleep
+		while(1);
+	}
+
 	packet.transmissionStart = 1;
 	errorStatus = NONE;
 
@@ -245,7 +261,6 @@ void sendError(char errorType){
 
 void initialiseWatchDogTimer(void){
 	
-
 	//Clear watchdog flag
 	MCUSR &= ~(1<<WDRF);
 
