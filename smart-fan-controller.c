@@ -28,10 +28,13 @@ int main(void)
 {	
 	
 	State currentState = sleep;
+	DDRA |= (1<<PORTA0);
+	PORTA &= ~(1<<PORTA0);
 	errorStatus = NONE;
 	speedControl.currentSpeed = 0;
 	speedControl.requestedSpeed = 0;
 	packet.transmissionStart = 0;
+	power.averagePower = 0;
 	
 	initialiseUART();
 	enableStartFrameDetection();
@@ -63,9 +66,7 @@ State receiveData(){
 	switch(packet.messageId) {
 			
 		case SPEED_REQUEST:
-			//Disables UART until speed has been changed
 			disableUART();
-			
 			//Set the new requested speed
 			setRequestedSpeed(packet.requestedSpeed);	
 			
@@ -85,12 +86,11 @@ State receiveData(){
 			}
 
 			packet.transmissionStart = 0;
+			
 			break;
-			//
+		
 		case STATUS_REQUEST:
-			//Disables UART until speed has been changed
 			disableUART();
-
 			_delay_ms(100);
 
 			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  power.averagePower, errorStatus);
@@ -103,10 +103,8 @@ State receiveData(){
 			
 			//Clear transmission start
 			packet.transmissionStart = 0;
-			
+
 			_delay_ms(100);
-			
-			// Re-enable UART
 			enableUART();
 
 			break;
@@ -126,13 +124,13 @@ State receiveData(){
 State start(){
 	initialisePWM(F_PWM, 0.65, 1);
 	intialiseSpeedTimer();
-	//initialiseADC();
+	initialiseADC();
 
 	_delay_ms(1000);
 	//intialiseBlockedDuct();
 	intialiseLockedRotor();
 	
-	//initialiseADC();
+	initialiseADC();
 	return (State)controlSpeed;
 }
 
@@ -168,13 +166,12 @@ State fanLocked(){
 	
 	_delay_ms(100);
 
-	packet.errorSent =1;
+	packet.errorSent = 1;
 
 	// Transmission clear
 	packet.transmissionStart = 0;
 	speedControl.currentSpeed = 0;
 	speedControl.requestedSpeed = 0;
-	packet.transmissionStart = 0;
 	
 	enableStartFrameDetection();
 	initialiseWatchDogTimer();

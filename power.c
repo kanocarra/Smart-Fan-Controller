@@ -50,12 +50,18 @@ ISR(TIMER2_COMPB_vect){
 			switchChannel(calculatedParameter);
 			calcAveragePower();
 			calculatedParameter = 0;
-			//Disable Timer2 Output Compare Interrupt
-			TIMSK2 &= ~(1<<OCIE2B);
-			//Enable Timer0 Overflow Interrupt
-			TIMSK0 |= (1<<TOIE0);
-			//Start the ADC start interrupt timer with 64 prescaler
-			TCCR0B |= (1<<CS01) | (1<<CS00);
+			if(!power.isDisabled){
+				ADCSRA &= ~(1<<ADIE);
+				//Stop ADC
+				ADCSRA &= ~(1<<ADSC);
+				//Disable Timer2 Output Compare Interrupt
+				TIMSK2 &= ~(1<<OCIE2B);
+				//Enable Timer0 Overflow Interrupt
+				TIMSK0 |= (1<<TOIE0);
+				//Start the ADC start interrupt timer with 1024 prescaler
+				TCCR0B |= (1<<CS02) | (1<<CS00);
+			}
+
 			break;
 
 		}
@@ -116,15 +122,17 @@ ISR(TIMER0_OVF_vect){
 	//Reset Timer count
 	TCNT0 = 130;
 	
-	//Renable Timer2 Output Compare Interrupt
+	//Re enable Timer2 Output Compare Interrupt
 	TIMSK2 |= (1<<OCIE2B);
-
 }
 
 
  void initialiseADC(void) {
+	
+	// Re-enable ADC
+	power.isDisabled = 0;
 
-	 //Initialise DDRB - Set Port B as inputs
+	 //Initialize DDRB - Set Port B as inputs
 	 DDRB &= ~(1<<PORTB0) & ~(1<<PORTB3);
 
 	 //Clears Power Reduction Register
@@ -136,7 +144,7 @@ ISR(TIMER0_OVF_vect){
 	 ADMUXA &= ~(ADMUXA);
 
 	 //Disable Digital Input (Current Sense Input)
-	 DIDR1 |= (1<<ADC11D);
+	 //DIDR1 |= (1<<ADC11D);
 
 	 //Reference Voltage Selection (VCC)
 	 ADMUXB &= ~(ADMUXB);
@@ -209,7 +217,19 @@ void switchChannel(int currentChannel){
 
  void calcAveragePower(void){
 	 power.averagePower = power.RMSvoltage * power.RMScurrent;
-	 //sendPower(power.averagePower);
  }
 
+
+void disableADC(void) {
+	
+	power.isDisabled = 1;
+	//Disable ADC
+	TIMSK2 &= ~(1<<OCIE2B);
+	TCCR0B &= ~(TCCR0B);
+	TCNT0 = 0;
+	TIMSK0 &= ~(1<<TOIE0);
+	ADCSRA &= ~(ADCSRA);
+	power.sqCurrentSum = 0;
+	power.sqVoltageSum = 0;
+}
 

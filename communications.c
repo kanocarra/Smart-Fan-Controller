@@ -44,33 +44,35 @@ ISR(WDT_vect){
 		packet.errorSent = 0;
 		errorStatus = LOCKED;
 	}
-
 }
 
 ISR(USART0_RX_vect){
+	cli();
 	unsigned int rX_data = UDR0;
+	
 	switch (packet.index) {
-		case SOURCE_ID:			
+
+		case SOURCE_ID:	
 			packet.sourceId = rX_data;
 			packet.index++;
 			break;
 
 		case DEST_ID:
 			packet.destinationId = rX_data;
-			
-			
+			//PORTA ^= (1<<PORTA0);
 			// Checks that the message is addressed to the smart fan otherwise ignores the packet
 			if (packet.destinationId == FAN_ID){
 				packet.index++;
 			} else {
-				packet.index = LF;
+				packet.index = 0;
+				packet.speedIndex = 0;
+				packet.destinationId = 0;
 			}
 			break;
 
 		case MESSAGE_ID:
 			// Stores the message ID
-			packet.messageId = rX_data;
-						// If status is requested	
+			packet.messageId = rX_data;	
 			if(packet.messageId == STATUS_REQUEST){
 					packet.transmissionComplete = 1;
 					packet.index = LF;
@@ -103,7 +105,7 @@ ISR(USART0_RX_vect){
 		
 		case LF:
 			if(rX_data == END_PACKET) {
-				if(packet.messageId == 83) {
+				if(packet.messageId == SPEED_REQUEST) {
 					packet.requestedSpeed = packet.speedValues[0] * 1000 + packet.speedValues[1] * 100 +  packet.speedValues[2] * 10;
 					packet.speedValues[0] = 0;
 					packet.speedValues[1] = 0;
@@ -111,6 +113,7 @@ ISR(USART0_RX_vect){
 					packet.transmissionComplete = 1;
 				} 
 			}
+			
 			packet.index = 0;
 			packet.speedIndex = 0;
 			packet.destinationId = 0;			
@@ -121,6 +124,7 @@ ISR(USART0_RX_vect){
 			packet.speedIndex = 0;
 			packet.destinationId = 0;
 	}
+	sei();
 }
 
 ISR(USART0_START_vect){
@@ -136,7 +140,6 @@ ISR(USART0_START_vect){
 
 	packet.transmissionStart = 1;
 	errorStatus = NONE;
-
 	// Disable receive start interrupt
 	UCSR0D &= ~(1<<SFDE0) & ~(1<<RXSIE0);	
 }
@@ -149,7 +152,7 @@ void initialiseUART()
 
 	// Set the UBRR value based on the baud rate and clock frequency 
 	unsigned int ubrrValue = ((F_CPU)/(BAUD*16)) - 1;
-
+	UCSR0B |= (1<<TXEN0);
 	packet.index = 0;
 	packet.messageId = 0;
 	packet.speedIndex = 0;
@@ -175,18 +178,21 @@ void enableStartFrameDetection(void) {
 }
 
 void TransmitUART(uint8_t TX_data)
-{
-	// Check that the USART Data Register is empty, AND if UCSR0A
-	// is all 0s
+{	
+	//UCSR0B |= (1<<TXEN0);
+	//// Check that the USART Data Register is empty, AND if UCSR0A
 	while(!(UCSR0A & (1<<UDRE0)));
 	
 	// Since UDR is empty put the data we want to send into it,
 	// then wait for a second and send the following data
 	UDR0 = TX_data;
-	
+
+	//Wait until transmit complete
+	//while(!(UCSR0A & (1<<TXC0)));
+	//UCSR0B &= ~(1<<TXEN0);
 }
 
-void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float current, unsigned int error) {
+void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float power, unsigned int error) {
 	packet.sendPacket[SOURCE_ID] = FAN_ID;
 	packet.sendPacket[DEST_ID] = packet.sourceId;
 	packet.sendPacket[MESSAGE_ID] = R;
@@ -195,7 +201,7 @@ void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float cur
 	
 	convertToPacket(requestedSpeed);
 	convertToPacket((unsigned int)currentSpeed);
-	packet.sendPacket[packet.sendPacketIndex] = (uint8_t)(current * 1000.0);
+	packet.sendPacket[packet.sendPacketIndex] = (uint8_t)(power * 10.0);
 	packet.sendPacketIndex++;
 	
 	if(error == NONE){
@@ -226,7 +232,7 @@ void disableUART(void){
 void enableUART(void) {
 	// Enable UART receive interrupt
 	packet.transmissionComplete = 0;
-	UCSR0B |= (1<<RXEN0) | (1<<TXEN0) | (1<<RXCIE0);
+	UCSR0B |= (1<<RXEN0) | (1<<RXCIE0);
 }
 
 void convertToPacket(unsigned int speed){

@@ -51,6 +51,7 @@ struct powerParameters{
 	float RMSvoltage;
 	float averagePower;
 	uint8_t sampleNumber;
+	uint8_t isDisabled;
 };
 
 struct communicationsPacket {
@@ -141,6 +142,8 @@ void sendVoltage(float RMSvoltage);
 
 //Send the average power value
 void sendPower(float averagePower);
+
+void disableADC(void);
 
 
 
