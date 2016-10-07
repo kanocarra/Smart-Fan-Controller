@@ -26,11 +26,11 @@ extern struct communicationsPacket packet;
 int main(void)	
 {	
 	
-	State currentState = idle;
+	State currentState = start;
 	errorStatus = NONE;
 	speedControl.currentSpeed = 0;
 	
-	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+	//set_sleep_mode(SLEEP_MODE_PWR_DOWN);
 	
 	//enable global interrupts
 	sei();
@@ -38,12 +38,14 @@ int main(void)
 	initialiseUART();
 	enableStartFrameDetection();
 	
-	// Enable sleep
-	sleep_enable();
+	//// Enable sleep
+	//sleep_enable();
+	//
+	//// Sleep state
+	//sleep_cpu();
 	
-	// Sleep state
-	sleep_cpu();
-	
+	speedControl.requestedSpeed = 2000;
+
 	while (1) {	
 		currentState = (State)currentState();
 	}
@@ -142,9 +144,7 @@ State controlSpeed(){
 		return (State)blockedDuct;	 	 
 	} else if(packet.transmissionComplete) {
 		return (State)receiveData;
-	} else if (power.adcConversionComplete) {
-		return (State)calculatePower;
-	} else {
+    } else {
 		return(State)controlSpeed;
 	}
 }
@@ -175,14 +175,6 @@ State fanLocked(){
 
 State blockedDuct(){
 
-
 	return (State)controlSpeed;
 }
 
-State calculatePower() {
-	calcRMScurrent();
-	calcRMSvoltage();
-	calcAveragePower();
-	power.adcConversionComplete = 0;
-	return (State)controlSpeed;
-}

@@ -51,7 +51,6 @@ struct powerParameters{
 	float RMSvoltage;
 	float averagePower;
 	uint8_t sampleNumber;
-	uint8_t adcConversionComplete;
 };
 
 struct communicationsPacket {
@@ -119,6 +118,8 @@ void intialiseLockedRotor(void);
 
 // Initialiase Analog to digital converter
 void initialiseADC(void);
+
+void initialiseADCTimer(void);
 
 // Calculate voltage
 void calcRMSvoltage(void);
