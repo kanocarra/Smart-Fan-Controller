@@ -39,7 +39,13 @@ int main(void)
 	if(errorStatus == LOCKED){
 		currentState = fanLocked;
 	}
+	sei();
 	
+	initialiseUART();
+	enableStartFrameDetection();
+	
+	speedControl.requestedSpeed = 2000;
+
 	while (1) {	
 		currentState = (State)currentState();
 	}
@@ -88,7 +94,7 @@ State receiveData(){
 			_delay_ms(100);
 
 			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  power.averagePower, errorStatus);
-			
+
 			// Reset transmission for a new frame
 			packet.transmissionComplete = 0;
 				
@@ -124,8 +130,8 @@ State start(){
 
 	_delay_ms(1000);
 	//intialiseBlockedDuct();
-
 	intialiseLockedRotor();
+	
 	//initialiseADC();
 	return (State)controlSpeed;
 }
@@ -149,8 +155,8 @@ State controlSpeed(){
 	} else if(errorStatus == BLOCKED) {
 		return (State)blockedDuct;	 	 
 	} else if(packet.transmissionComplete) {
-			return (State)receiveData;
-	} else {
+		return (State)receiveData;
+    } else {
 		return(State)controlSpeed;
 	}
 }
@@ -182,6 +188,7 @@ State fanLocked(){
 } 
 
 State blockedDuct(){
+
 	return (State)controlSpeed;
 }
 

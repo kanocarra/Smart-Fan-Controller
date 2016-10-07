@@ -119,6 +119,8 @@ void intialiseLockedRotor(void);
 // Initialiase Analog to digital converter
 void initialiseADC(void);
 
+void initialiseADCTimer(void);
+
 // Calculate voltage
 void calcRMSvoltage(void);
 

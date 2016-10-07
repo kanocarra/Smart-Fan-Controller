@@ -21,13 +21,51 @@
 
  struct powerParameters power;
  //global variable
- float numConversions = 0.0;
  int pulseSample = 0;
- float timerCycles = 0.0;
- int calculatedParameter = 0; //Nothing Calculated = 0, Current Calculated = 1.
+ float numConversions = 0.0;
+ float cycles = 0.0;
+ int calculatedParameter = 0; //Calculate Current = 0, Calculate Voltage = 1.
  float gain = 3.55; //(VDR_R1 + VDR_R2)/(VDR_R2);
  
 //Interrupts 
+ISR(TIMER2_COMPB_vect){
+	
+	if(cycles < 21){
+		// Enable ADC interrupt
+		ADCSRA |= (1<<ADIE);
+		ADCSRA |= (1<<ADSC);
+		cycles++;
+	} else {
+		
+		switch (calculatedParameter){
+			
+			case 0: 
+			calcRMScurrent();
+			switchChannel(calculatedParameter);
+			calculatedParameter = 1;
+			break;
+
+			case 1:
+			calcRMSvoltage();
+			switchChannel(calculatedParameter);
+			calcAveragePower();
+			calculatedParameter = 0;
+			//Disable Timer2 Output Compare Interrupt
+			TIMSK2 &= ~(1<<OCIE2B);
+			//Enable Timer0 Overflow Interrupt
+			TIMSK0 |= (1<<TOIE0);
+			//Start the ADC start interrupt timer with 64 prescaler
+			TCCR0B |= (1<<CS01) | (1<<CS00);
+			break;
+
+		}
+		numConversions = 0.0;
+		cycles = 0.0;
+		
+	}
+
+}
+
 ISR(ADC_vect){
 
 	switch(calculatedParameter){
@@ -38,7 +76,7 @@ ISR(ADC_vect){
 		numConversions++;
 		pulseSample++;
 		if(pulseSample == 3){
-			//Disable ADC interrupts
+			//Disable ADC interrupt
 			ADCSRA &= ~(1<<ADIE);
 			//Stop ADC
 			ADCSRA &= ~(1<<ADSC);
@@ -54,7 +92,7 @@ ISR(ADC_vect){
 		numConversions++;
 		pulseSample++;
 		if(pulseSample == 3){
-			//Disable ADC interrupts
+			//Disable ADC interrupt
 			ADCSRA &= ~(1<<ADIE);
 			//Stop ADC
 			ADCSRA &= ~(1<<ADSC);
@@ -66,35 +104,23 @@ ISR(ADC_vect){
 
 }
 
-ISR(TIMER2_COMPB_vect){
+ISR(TIMER0_OVF_vect){
 	
-	if(timerCycles < 21){
-		power.sampleNumber = 0;
-		ADCSRA |= (1<<ADIE);
-		ADCSRA |= (1<<ADSC);
-		timerCycles++;
-		}else{
+	//Disable ADC Timer and it's Interrupt Enable.
+	TIMSK0 &= ~(1<<TOIE0);
+	TCCR0B &= ~(TCCR0B);
 
-		switch(calculatedParameter){
+	//Clearing overflow flag
+	TIFR0 |= (1<<TOV0);
 
-			case 0:
-			calcRMScurrent();
-			switchChannel(calculatedParameter);
-			calculatedParameter = 1;
-			break;
+	//Reset Timer count
+	TCNT0 = 130;
+	
+	//Renable Timer2 Output Compare Interrupt
+	TIMSK2 |= (1<<OCIE2B);
 
-			case 1:
-			calcRMSvoltage();
-			switchChannel(calculatedParameter);
-			calcAveragePower();
-			calculatedParameter = 0;
-			break;
-		}
-
-		numConversions = 0.0;
-		timerCycles = 0.0;
-	}
 }
+
 
  void initialiseADC(void) {
 
@@ -123,28 +149,26 @@ ISR(TIMER2_COMPB_vect){
 
 	 //Enable ADC, ADC Pre-scaler (divide by 8), Auto Trigger Source, Enable ADC Interrupt
 	 ADCSRA |= (1<<ADEN) | (1<<ADPS1) | (1<<ADPS0) | (1<<ADATE) | (1<<ADIE);
+
+	 initialiseADCTimer();
 	 
 	 //Enable Timer2 Output Compare Interrupt
 	 TIMSK2 |= (1<<OCIE2B);
 
- }
-
-void calcRMScurrent(void){
-	
-	power.RMScurrent = sqrt(power.sqCurrentSum/numConversions);
-	power.sqCurrentSum = 0.0;
 }
 
-void calcRMSvoltage(void){
+void initialiseADCTimer(void){
 
-	 power.RMSvoltage = sqrt(power.sqVoltageSum/numConversions);
-	 power.sqVoltageSum = 0.0;
+	//Ensure counter is stopped
+	TCCR0B &= ~(TCCR0B);
+
+	//Clearing overflow flag
+	TIFR0 |= (1<<TOV0);
+		 
+	//Inital Count Value
+	TCNT0 = 130;
+
 }
-
-void calcAveragePower(void){
-	power.averagePower = power.RMSvoltage * power.RMScurrent;
-}
-
 
 void switchChannel(int currentChannel){
 	
@@ -166,6 +190,26 @@ void switchChannel(int currentChannel){
 		ADMUXA = ADC_I_CHANNEL;
 		break;
 	}
+
+ }
+
+ void calcRMScurrent(void){
+	 power.RMScurrent = sqrt(power.sqCurrentSum/numConversions);
+	 power.sqCurrentSum = 0.0;
+	 //sendCurrent(power.RMScurrent);
+	 
+ }
+
+ void calcRMSvoltage(void){
+
+	 power.RMSvoltage = sqrt(power.sqVoltageSum/numConversions);
+	 power.sqVoltageSum = 0.0;
+	 //sendVoltage(power.RMSvoltage);
+ }
+
+ void calcAveragePower(void){
+	 power.averagePower = power.RMSvoltage * power.RMScurrent;
+	 //sendPower(power.averagePower);
  }
 
 
