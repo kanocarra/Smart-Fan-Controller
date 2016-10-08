@@ -111,9 +111,9 @@ ISR(USART0_RX_vect){
 			break;
 		
 		default:
-		packet.index = 0;
-		packet.speedIndex = 0;
-		packet.destinationId = 0;
+			packet.index = 0;
+			packet.speedIndex = 0;
+			packet.destinationId = 0;
 	}
 	sei();
 }
@@ -187,11 +187,11 @@ void TransmitUART(uint8_t TX_data)
 {	
 	// Clear transmit complete
 
-	UCSR0B |= (1<<UDRIE0);
+	while(!(UCSR0A & (1<<UDRE0)));
 	
 	// Since UDR is empty put the data we want to send into it,
 	// then wait for a second and send the following data
-	packet.sendData = TX_data;
+	UDR0 = TX_data;
 
 	//Wait until transmit complete
 	//while(!(UCSR0A & (1<<TXC0)));
