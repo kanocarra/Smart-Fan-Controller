@@ -49,9 +49,7 @@ ISR(WDT_vect){
 ISR(USART0_RX_vect){
 	cli();
 	unsigned int rX_data = UDR0;
-	UCSR0B |= (1<<TXEN0);
 	switch (packet.index) {
-
 		case SOURCE_ID:	
 			packet.sourceId = rX_data;
 			packet.index++;
@@ -107,19 +105,19 @@ ISR(USART0_RX_vect){
 					packet.transmissionComplete = 1;
 				} 
 			}
-			
 			packet.index = 0;
 			packet.speedIndex = 0;
 			packet.destinationId = 0;			
 			break;
 		
 		default:
-			packet.index = 0;
-			packet.speedIndex = 0;
-			packet.destinationId = 0;
+		packet.index = 0;
+		packet.speedIndex = 0;
+		packet.destinationId = 0;
 	}
 	sei();
 }
+
 
 ISR(USART0_START_vect){
 		
@@ -134,8 +132,19 @@ ISR(USART0_START_vect){
 
 	packet.transmissionStart = 1;
 	errorStatus = NONE;
+
 	// Disable receive start interrupt
 	UCSR0D &= ~(1<<SFDE0) & ~(1<<RXSIE0);	
+}
+
+ISR(USART0_TX_vect) {
+//do nothing
+}
+
+ISR(USART0_UDRE_vect){
+	UCSR0B |= (1<<TXCIE1);
+	UCSR0B &= (1<<UDRIE0);
+	UDR0 = packet.sendData;
 }
 
 void initialiseUART()
@@ -146,7 +155,6 @@ void initialiseUART()
 
 	// Set the UBRR value based on the baud rate and clock frequency 
 	unsigned int ubrrValue = ((F_CPU)/(BAUD*16)) - 1;
-	UCSR0B |= (1<<TXEN0);
 	packet.index = 0;
 	packet.messageId = 0;
 	packet.speedIndex = 0;
@@ -155,9 +163,11 @@ void initialiseUART()
 	UBRR0H = (ubrrValue>>8);
 	UBRR0L = ubrrValue;
 	
-	// Enabling the USART receiver and transmitter and enable receive interrupt
+	// Enabling the USART receiver and transmitter
+	UCSR0B |= (1<<TXEN0) | (1<<RXEN0);
+
+	//Enable receive interrupt
 	enableReceiver();
-	
 	
 	// Set frame size to 8-bits
 	UCSR0C |= (1<<UCSZ00) | (1<<UCSZ01);
@@ -172,17 +182,16 @@ void enableStartFrameDetection(void) {
 	 UCSR0D |= (1<<SFDE0) | (1<<RXSIE0);
 }
 
+
 void TransmitUART(uint8_t TX_data)
 {	
 	// Clear transmit complete
-	UCSR0A |= (1<<TXC0);
 
-	// Check that the USART Data Register is empty
-	while(!(UCSR0A & (1<<UDRE0)));
+	UCSR0B |= (1<<UDRIE0);
 	
 	// Since UDR is empty put the data we want to send into it,
 	// then wait for a second and send the following data
-	UDR0 = TX_data;
+	packet.sendData = TX_data;
 
 	//Wait until transmit complete
 	//while(!(UCSR0A & (1<<TXC0)));
@@ -227,8 +236,7 @@ void disableReceiver(void){
 
 void enableReceiver(void) {
 	// Enable UART receive interrupt
-	packet.transmissionComplete = 0;
-	UCSR0B |= (1<<RXCIE0) | (1<<RXEN0);
+	UCSR0B |= (1<<RXCIE0);
 }
 
 void convertToPacket(unsigned int speed){
@@ -276,35 +284,4 @@ void initialiseWatchDogTimer(void){
 	// Enable watchdog timer interrupt
 	WDTCSR |= (1<< WDIE) | (1<< WDE);
 
-}
-
-void sendSpeedRpm(float averageSpeed){
-	uint8_t tx_data = (uint8_t)(averageSpeed/10.0);
-	TransmitUART(tx_data);
-}
-
-void sendCurrent(float RMScurrent){
-	uint8_t tx_data = (uint8_t)(RMScurrent * 10000.0);
-	TransmitUART(tx_data);
-}
-
-void sendVoltage(float RMSvoltage){
-	uint8_t tx_data = (uint8_t)(RMSvoltage * 10.0);
-	TransmitUART(tx_data);
-}
-
-
-void sendPower(float averagePower){
-	uint8_t tx_data = (uint8_t)(averagePower * 10.0);
-	TransmitUART(tx_data);
-}
-
-void resetComms(void){
-	packet.receivedParams[0] = 0;
-	packet.receivedParams[1] = 0;
-	packet.receivedParams[2] = 0;
-	packet.receivedParams[3] = 0;
-	packet.receivedParams[4] = 0;
-	packet.receivedParams[5] = 0;
-	packet.receivedParams[6] = 0;
 }

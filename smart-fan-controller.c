@@ -32,9 +32,8 @@ int main(void)
 	speedControl.currentSpeed = 0;
 	speedControl.requestedSpeed = 0;
 	packet.transmissionStart = 0;
+	packet.transmissionComplete = 0;
 	power.averagePower = 0;
-
-	resetComms();
 	
 	initialiseUART();
 	enableStartFrameDetection();
@@ -67,7 +66,7 @@ State receiveData(){
 			
 		case SPEED_REQUEST:
 			disableReceiver();
-			USART_Flush();
+
 			//Set the new requested speed
 			setRequestedSpeed(packet.requestedSpeed);	
 			
@@ -92,7 +91,6 @@ State receiveData(){
 		
 		case STATUS_REQUEST:
 			disableReceiver();
-			USART_Flush();
 			_delay_ms(100);
 
 			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  power.averagePower, errorStatus);
@@ -107,7 +105,6 @@ State receiveData(){
 			packet.transmissionStart = 0;
 
 			_delay_ms(100);
-			USART_Flush();
 			enableReceiver();
 		
 			break;
@@ -133,7 +130,6 @@ State start(){
 	//intialiseBlockedDuct();
 	intialiseLockedRotor();
 	
-	initialiseADC();
 	return (State)controlSpeed;
 }
 
@@ -141,14 +137,7 @@ void wdt_init(void)
 {
 	MCUSR = 0;
 	wdt_disable();
-
 	return;
-}
-
-void USART_Flush( void )
-{
-	unsigned char dummy;
-	while ( UCSR0A & (1<<RXC0) ) dummy = UDR0;
 }
 
 State changeDirection(){
