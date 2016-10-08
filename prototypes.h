@@ -67,6 +67,7 @@ struct communicationsPacket {
 	unsigned int requestedSpeed; 
 	uint8_t errorSent;
 	uint8_t transmissionStart;
+	uint8_t receivedParams[7];
 };
 
 struct blockedParameters {
@@ -179,6 +180,8 @@ void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
 void turnOffWatchDogTimer(void);
 
 void USART_Flush( void );
+
+void resetComms(void);
 
 /**************************** BLOCKED DUCT CALIBRATION ************************/
 /*******************************************************************/

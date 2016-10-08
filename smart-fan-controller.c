@@ -33,6 +33,8 @@ int main(void)
 	speedControl.requestedSpeed = 0;
 	packet.transmissionStart = 0;
 	power.averagePower = 0;
+
+	resetComms();
 	
 	initialiseUART();
 	enableStartFrameDetection();
@@ -41,11 +43,11 @@ int main(void)
 		currentState = fanLocked;
 	}
 	sei();
+
+	DDRA |= (1<<PORTA0);
 	
 	initialiseUART();
 	enableStartFrameDetection();
-	
-	speedControl.requestedSpeed = 2000;
 
 	while (1) {	
 		currentState = (State)currentState();
@@ -84,7 +86,7 @@ State receiveData(){
 				return (State)start;
 			}
 
-			packet.transmissionStart = 0;
+			packet.transmissionStart = 0; 
 			
 			break;
 		
@@ -125,7 +127,7 @@ State receiveData(){
 State start(){
 	initialisePWM(F_PWM, 0.65, 1);
 	intialiseSpeedTimer();
-	//initialiseADC();
+	initialiseADC();
 
 	_delay_ms(1000);
 	//intialiseBlockedDuct();
@@ -167,7 +169,7 @@ State controlSpeed(){
 }
 
 State fanLocked(){
-	enableTransmitter();
+
 	// Send error
 	sendError('L');
 	

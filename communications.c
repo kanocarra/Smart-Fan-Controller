@@ -47,8 +47,9 @@ ISR(WDT_vect){
 }
 
 ISR(USART0_RX_vect){
-	//cli();
+	cli();
 	unsigned int rX_data = UDR0;
+	UCSR0B |= (1<<TXEN0);
 	switch (packet.index) {
 
 		case SOURCE_ID:	
@@ -61,10 +62,6 @@ ISR(USART0_RX_vect){
 			// Checks that the message is addressed to the smart fan otherwise ignores the packet
 			if (packet.destinationId == FAN_ID){
 				packet.index++;
-			} else {
-				packet.index = 0;
-				packet.speedIndex = 0;
-				packet.destinationId = 0;
 			}
 			break;
 
@@ -73,7 +70,6 @@ ISR(USART0_RX_vect){
 			packet.messageId = rX_data;	
 			if(packet.messageId == STATUS_REQUEST){
 					packet.transmissionComplete = 1;
-					packet.index = LF;
 			} else {
 				packet.index++;
 			}
@@ -161,7 +157,7 @@ void initialiseUART()
 	
 	// Enabling the USART receiver and transmitter and enable receive interrupt
 	enableReceiver();
-	enableTransmitter();
+	
 	
 	// Set frame size to 8-bits
 	UCSR0C |= (1<<UCSZ00) | (1<<UCSZ01);
@@ -189,7 +185,7 @@ void TransmitUART(uint8_t TX_data)
 	UDR0 = TX_data;
 
 	//Wait until transmit complete
-	while(!(UCSR0A & (1<<TXC0)));
+	//while(!(UCSR0A & (1<<TXC0)));
 }
 
 void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float power, unsigned int error) {
@@ -233,10 +229,6 @@ void enableReceiver(void) {
 	// Enable UART receive interrupt
 	packet.transmissionComplete = 0;
 	UCSR0B |= (1<<RXCIE0) | (1<<RXEN0);
-}
-
-void enableTransmitter(void){
-	UCSR0B |= (1<<TXEN0);
 }
 
 void convertToPacket(unsigned int speed){
@@ -305,4 +297,14 @@ void sendVoltage(float RMSvoltage){
 void sendPower(float averagePower){
 	uint8_t tx_data = (uint8_t)(averagePower * 10.0);
 	TransmitUART(tx_data);
+}
+
+void resetComms(void){
+	packet.receivedParams[0] = 0;
+	packet.receivedParams[1] = 0;
+	packet.receivedParams[2] = 0;
+	packet.receivedParams[3] = 0;
+	packet.receivedParams[4] = 0;
+	packet.receivedParams[5] = 0;
+	packet.receivedParams[6] = 0;
 }
