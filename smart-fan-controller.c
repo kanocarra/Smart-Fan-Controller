@@ -77,6 +77,8 @@ State receiveData(){
 			enableReceiver();
 
 			if(speedControl.requestedSpeed <= 0){
+				WDTCSR &= ~(WDTCSR);
+				wdt_enable(WDTO_15MS);
 				return (State)sleep;
 			} else if(speedControl.currentSpeed == 0){
 				return (State)start;
@@ -105,8 +107,6 @@ State receiveData(){
 				_delay_ms(100);
 
 				enableReceiver();
-				//PORTA ^= ~(1<<PORTA0);
-				//USART_Flush();
 			}
 			
 			break;
