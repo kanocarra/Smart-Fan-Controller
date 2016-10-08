@@ -50,18 +50,13 @@ ISR(TIMER2_COMPB_vect){
 			switchChannel(calculatedParameter);
 			calcAveragePower();
 			calculatedParameter = 0;
-			if(!power.isDisabled){
-				ADCSRA &= ~(1<<ADIE);
-				//Stop ADC
-				ADCSRA &= ~(1<<ADSC);
-				//Disable Timer2 Output Compare Interrupt
-				TIMSK2 &= ~(1<<OCIE2B);
-				//Enable Timer0 Overflow Interrupt
-				TIMSK0 |= (1<<TOIE0);
-				//Start the ADC start interrupt timer with 1024 prescaler
-				TCCR0B |= (1<<CS02) | (1<<CS00);
-			}
-
+			//Disable ADC Interrupt
+			ADCSRA &= ~(1<<ADIE);
+			//Stop ADC
+			ADCSRA &= ~(1<<ADSC);
+			//Disable Timer2 Output Compare Interrupt
+			TIMSK2 &= ~(1<<OCIE2B);
+			power.ADCConversionComplete = 1;
 			break;
 
 		}
@@ -110,28 +105,9 @@ ISR(ADC_vect){
 
 }
 
-ISR(TIMER0_OVF_vect){
-	
-	//Disable ADC Timer and it's Interrupt Enable.
-	TIMSK0 &= ~(1<<TOIE0);
-	TCCR0B &= ~(TCCR0B);
-
-	//Clearing overflow flag
-	TIFR0 |= (1<<TOV0);
-
-	//Reset Timer count
-	TCNT0 = 130;
-	
-	//Re enable Timer2 Output Compare Interrupt
-	TIMSK2 |= (1<<OCIE2B);
-}
-
 
  void initialiseADC(void) {
 	
-	// Re-enable ADC
-	power.isDisabled = 0;
-
 	 //Initialize DDRB - Set Port B as inputs
 	 DDRB &= ~(1<<PORTB0) & ~(1<<PORTB3);
 
@@ -158,23 +134,8 @@ ISR(TIMER0_OVF_vect){
 	 //Enable ADC, ADC Pre-scaler (divide by 8), Auto Trigger Source, Enable ADC Interrupt
 	 ADCSRA |= (1<<ADEN) | (1<<ADPS1) | (1<<ADPS0) | (1<<ADATE) | (1<<ADIE);
 
-	 initialiseADCTimer();
-	 
 	 //Enable Timer2 Output Compare Interrupt
 	 TIMSK2 |= (1<<OCIE2B);
-
-}
-
-void initialiseADCTimer(void){
-
-	//Ensure counter is stopped
-	TCCR0B &= ~(TCCR0B);
-
-	//Clearing overflow flag
-	TIFR0 |= (1<<TOV0);
-		 
-	//Inital Count Value
-	TCNT0 = 130;
 
 }
 
@@ -204,30 +165,16 @@ void switchChannel(int currentChannel){
  void calcRMScurrent(void){
 	 power.RMScurrent = sqrt(power.sqCurrentSum/numConversions);
 	 power.sqCurrentSum = 0.0;
-	 
+	 //sendCurrent(power.RMScurrent);
  }
 
  void calcRMSvoltage(void){
 
 	 power.RMSvoltage = sqrt(power.sqVoltageSum/numConversions);
 	 power.sqVoltageSum = 0.0;
+	 //sendVoltage(power.RMSvoltage);
  }
 
  void calcAveragePower(void){
 	 power.averagePower = power.RMSvoltage * power.RMScurrent;
  }
-
-
-void disableADC(void) {
-	
-	power.isDisabled = 1;
-	//Disable ADC
-	TIMSK2 &= ~(1<<OCIE2B);
-	TCCR0B &= ~(TCCR0B);
-	TCNT0 = 0;
-	TIMSK0 &= ~(1<<TOIE0);
-	ADCSRA &= ~(ADCSRA);
-	power.sqCurrentSum = 0;
-	power.sqVoltageSum = 0;
-}
-

@@ -34,6 +34,7 @@ int main(void)
 	packet.transmissionStart = 0;
 	packet.transmissionComplete = 0;
 	power.averagePower = 0;
+	power.ADCConversionComplete = 0;
 	
 	initialiseUART();
 	enableStartFrameDetection();
@@ -62,6 +63,9 @@ State idle() {
 }
 
 State receiveData(){
+	
+	uint8_t conversionComplete = 0;
+
 	switch(packet.messageId) {
 			
 		case SPEED_REQUEST:
@@ -90,8 +94,15 @@ State receiveData(){
 			break;
 		
 		case STATUS_REQUEST:
+			
 			disableReceiver();
-			_delay_ms(100);
+			initialiseADC();
+			
+			while(!conversionComplete){
+				conversionComplete = power.ADCConversionComplete;
+			}
+			
+			power.ADCConversionComplete = 0;
 
 			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed,  power.averagePower, errorStatus);
 

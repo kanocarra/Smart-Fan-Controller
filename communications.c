@@ -283,3 +283,24 @@ void initialiseWatchDogTimer(void){
 	WDTCSR |= (1<< WDIE) | (1<< WDE);
 
 }
+
+void sendSpeedRpm(float averageSpeed){
+	uint8_t tx_data = (uint8_t)(averageSpeed/10.0);
+	TransmitUART(tx_data);
+}
+
+void sendCurrent(float RMScurrent){
+	uint8_t tx_data = (uint8_t)(RMScurrent * 1000.0);
+	TransmitUART(tx_data);
+}
+
+void sendVoltage(float RMSvoltage){
+	uint8_t tx_data = (uint8_t)(RMSvoltage * 10.0);
+	TransmitUART(tx_data);
+}
+
+
+void sendPower(float averagePower){
+	uint8_t tx_data = (uint8_t)(averagePower * 10.0);
+	TransmitUART(tx_data);
+}
