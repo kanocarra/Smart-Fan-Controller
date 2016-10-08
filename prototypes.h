@@ -68,6 +68,7 @@ struct communicationsPacket {
 	uint8_t errorSent;
 	uint8_t sendData;
 	uint8_t transmissionStart;
+	uint8_t statusSent;
 
 };
 
@@ -179,5 +180,7 @@ void intialiseBlockedDuct(void);
 
 //check if the duct is blocked
  uint8_t checkBlockDuct(float speed);
+ 
+ void USART_Flush( void );
 
 #endif /* PROTOTYPES_H_ */

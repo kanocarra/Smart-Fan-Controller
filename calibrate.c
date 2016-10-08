@@ -39,17 +39,6 @@ void intialiseBlockedDuct(){
 
 uint8_t checkBlockDuct(float speed){
 
-
-	//blockedControl.dutyCycleSamples[0]=0;
-	//blockedControl.dutyCycleSamples[1]=32;
-	//blockedControl.dutyCycleSamples[2]=59;
-//
-	//uint8_t speedIndex = (uint8_t)(speed/10.0) - 30;
-	//uint8_t expectedDutyCycle = blockedControl.dutyCycleSamples[speedIndex];
-//
-//
-	//return ((pwm.dutyCycle*100) < (0.8*expectedDutyCycle) || (pwm.dutyCycle*100) > (1.2*expectedDutyCycle));
-
 	float expectedDutyCycle = 0.0256*(speedControl.currentSpeed) + 7.8292;
 		
 	if(speedControl.currentSpeed < 900){
