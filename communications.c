@@ -186,16 +186,14 @@ void enableStartFrameDetection(void) {
 
 void TransmitUART(uint8_t TX_data)
 {	
-	// Clear transmit complete
-
-	while(!(UCSR0A & (1<<UDRE0)));
+	while(!(UCSR0A  & (1<<UDRE0)));
 	
 	// Since UDR is empty put the data we want to send into it,
 	// then wait for a second and send the following data
 	UDR0 = TX_data;
 
 	//Wait until transmit complete
-	//while(!(UCSR0A & (1<<TXC0)));
+	while(!(UCSR0A & (1<<TXC0)));
 }
 
 void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float power, unsigned int error) {

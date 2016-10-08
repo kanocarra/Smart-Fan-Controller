@@ -100,7 +100,6 @@ State receiveData(){
 			initialiseADC();
 
 			_delay_ms(100);
-			
 
 			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed, power.averagePower, errorStatus);
 
@@ -112,7 +111,7 @@ State receiveData(){
 			
 			//Clear transmission start
 			packet.transmissionStart = 0;
-
+			_delay_ms(100);
 			enableReceiver();
 			break;
 		
