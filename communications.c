@@ -47,7 +47,6 @@ ISR(WDT_vect){
 }
 
 ISR(USART0_RX_vect){
-	cli();
 	unsigned int rX_data = UDR0;
 	switch (packet.index) {
 		case SOURCE_ID:	
@@ -115,7 +114,6 @@ ISR(USART0_RX_vect){
 			packet.speedIndex = 0;
 			packet.destinationId = 0;
 	}
-	sei();
 }
 
 

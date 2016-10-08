@@ -106,7 +106,6 @@ State receiveData(){
 
 			_delay_ms(100);
 			enableReceiver();
-		
 			break;
 		
 		default:
