@@ -15,10 +15,11 @@ State idle();
 State receiveData();
 State start();
 State changeDirection();
-State adjustSpeed();
 State controlSpeed();
 State fanLocked();
 State blockedDuct();
+State sleep();
 State sendStatus();
+State calculatePower();
 
 #endif /* STATE_H_ */

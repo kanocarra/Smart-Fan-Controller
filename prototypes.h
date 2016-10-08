@@ -5,8 +5,17 @@
  *  Author: emel269
  */ 
 
+
 #ifndef PROTOTYPES_H_
 #define PROTOTYPES_H_
+
+enum Errors {
+	NONE,
+	LOCKED,
+	BLOCKED
+};
+
+enum Errors errorStatus;
 
 struct pwmParameters {
 	unsigned long frequency;
@@ -27,6 +36,10 @@ struct speedParameters{
 	float sampleTime;
 	float sampleCounter;
 	float lastSpeed;
+	uint16_t lockedRotorCount;
+	unsigned int prescaler;
+	uint8_t lockedRotorDection;
+
 };
 
 struct powerParameters{
@@ -37,7 +50,7 @@ struct powerParameters{
 	float RMScurrent;
 	float RMSvoltage;
 	float averagePower;
-	uint8_t sampleNumber;
+	uint8_t ADCConversionComplete;
 };
 
 struct communicationsPacket {
@@ -51,7 +64,16 @@ struct communicationsPacket {
 	uint8_t sendPacket[14];
 	uint8_t sendPacketIndex;
 	unsigned int requestedSpeed; 
+	uint8_t errorSent;
+	uint8_t sendData;
+	uint8_t transmissionStart;
+
 };
+
+struct blockedParameters {
+	uint8_t powerSamples[241];
+};
+
 
 /*************************** PWM GENERATION **************************/
 /********************************************************************/
@@ -71,7 +93,7 @@ void setDutyCycle(float gain);
 /************************* FAN SPEED CONTROL ************************/
 /*******************************************************************/
 
-// Initialise timer to measure fan speed
+// Initialize timer to measure fan speed
 void intialiseSpeedTimer(void);
 
 // Calculate fan speed in rpm
@@ -89,6 +111,8 @@ void setSpeed(void);
 // Set a new requested speed
 void setRequestedSpeed(unsigned int speed);
 
+//Initialize Locked Rotor 
+void intialiseLockedRotor(void);
 
 
 /******************** POWER CONSUMPTION MEASUREMENT *****************/
@@ -131,10 +155,33 @@ void TransmitUART(uint8_t TX_data);
 
 void sendStatusReport(unsigned int requestedSpeed, float speed, float power, unsigned int error);
 
-void disableUART(void);
+void disableReceiver(void);
 
-void enableUART(void);
+void enableReceiver(void);
+
+void disableTransmitter(void);
+
+void enableTransmitter(void);
 
 void convertToPacket(unsigned int speed);
+
+void sendError(char errorType);
+
+void enableStartFrameDetection(void);
+
+void initialiseWatchDogTimer(void);
+
+void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
+
+void turnOffWatchDogTimer(void);
+
+/**************************** BLOCKED DUCT CALIBRATION ************************/
+/*******************************************************************/
+
+//calibrate the power corresponding at different speeds
+void intialiseBlockedDuct(void);
+
+//check if the duct is blocked
+ uint8_t checkBlockDuct(float speed);
 
 #endif /* PROTOTYPES_H_ */
