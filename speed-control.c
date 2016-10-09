@@ -173,7 +173,6 @@
 	// Reset errors for controller
 	speedControl.lastError = 0;
 	speedControl.errorSum = 0;
-	setSpeed();
  }
 
  void intialiseLockedRotor(void){

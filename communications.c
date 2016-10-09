@@ -14,12 +14,16 @@
  #include <stdio.h>
  #include <avr/sleep.h>
  #include <avr/wdt.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
  #define FAN_ID 2
  #define SW_VERSION 1
  #define END_PACKET 10
   #define R 82
  #define SPEED_REQUEST 83
  #define STATUS_REQUEST 63
+ #define CR 13
 
  #include "prototypes.h"
 
@@ -47,58 +51,67 @@ ISR(WDT_vect){
 }
 
 ISR(USART0_RX_vect){
-	unsigned int rX_data = UDR0;
+	uint8_t rX_data = UDR0;
 	switch (packet.index) {
 		case SOURCE_ID:	
-			packet.sourceId = rX_data;
+			packet.sourceId = rX_data - 48;
 			packet.index++;
 			break;
 
 		case DEST_ID:
-			packet.destinationId = rX_data;
+			packet.destinationId = rX_data - 48;
 			// Checks that the message is addressed to the smart fan otherwise ignores the packet
 			if (packet.destinationId == FAN_ID){
-				packet.index++;
 			} else {
-				packet.index = LF;
+				packet.destinationId = 0;
 			}
+			packet.index++;
 			break;
 
 		case MESSAGE_ID:
 			// Stores the message ID
-			packet.messageId = rX_data;	
-			if(packet.messageId == STATUS_REQUEST){
-				packet.transmissionComplete = 1;
-				packet.index = LF;
-			} else {
-				packet.index++;
+			if (packet.destinationId == FAN_ID){
+				packet.messageId = rX_data;	
+				if(packet.messageId == STATUS_REQUEST){
+					packet.statusSent = 0;
+					packet.index = LF;
+					break;
+				}
 			}
+			packet.index++;
 			break;
 
 		case DATA0:
 			// If a new speed is requested
-			if(packet.messageId == SPEED_REQUEST){
-				packet.speedValues[packet.speedIndex] = rX_data;
-				packet.speedIndex++;
-				packet.index++;
+			if (packet.destinationId == FAN_ID){
+				if(packet.messageId == SPEED_REQUEST){
+					packet.speedValues[packet.speedIndex] =  rX_data - 48;
+					packet.speedIndex++;
+				}
 			}
+			packet.index++;
 			
 			break;
 		
 		case DATA1:
-			packet.speedValues[packet.speedIndex] = rX_data;
-			packet.speedIndex++;
+			if (packet.destinationId == FAN_ID){
+				packet.speedValues[packet.speedIndex] =  rX_data - 48;
+				packet.speedIndex++;
+			}
 			packet.index++;
 			break;
 		
 		case DATA2:
-			packet.speedValues[packet.speedIndex] = rX_data;
-			packet.speedIndex++;
+			if (packet.destinationId == FAN_ID){
+				packet.speedValues[packet.speedIndex] =  rX_data - 48;
+				packet.speedIndex++;
+				packet.requestedSpeed = packet.speedValues[0] * 1000 + packet.speedValues[1] * 100 +  packet.speedValues[2] * 10;
+			}
 			packet.index++;
 			break;
 		
 		case LF:
-			if(rX_data == END_PACKET) {
+			if(rX_data == END_PACKET || rX_data == CR) {
 				if(packet.messageId == SPEED_REQUEST) {
 					packet.requestedSpeed = packet.speedValues[0] * 1000 + packet.speedValues[1] * 100 +  packet.speedValues[2] * 10;
 					packet.speedValues[0] = 0;
@@ -138,15 +151,6 @@ ISR(USART0_START_vect){
 	UCSR0D &= ~(1<<SFDE0) & ~(1<<RXSIE0);	
 }
 
-ISR(USART0_TX_vect) {
-//do nothing
-}
-
-ISR(USART0_UDRE_vect){
-	UCSR0B |= (1<<TXCIE1);
-	UCSR0B &= (1<<UDRIE0);
-	UDR0 = packet.sendData;
-}
 
 void initialiseUART()
 {	
@@ -186,7 +190,7 @@ void enableStartFrameDetection(void) {
 
 void TransmitUART(uint8_t TX_data)
 {	
-	while(!(UCSR0A  & (1<<UDRE0)));
+	while(!(UCSR0A & (1<<UDRE0)));
 	
 	// Since UDR is empty put the data we want to send into it,
 	// then wait for a second and send the following data
@@ -224,18 +228,19 @@ void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float pow
 		TransmitUART(packet.sendPacket[i]);
 		i++;
 	}
+	packet.statusSent = 1;
 	packet.sendPacketIndex = 0;
 	
 }
 
 void disableReceiver(void){
 	// Disable UART receive interrupt
-	UCSR0B &= ~(1<RXCIE0);
+	UCSR0B &= ~(1<<RXCIE0) & ~(1<<RXEN0);
 }
 
 void enableReceiver(void) {
 	// Enable UART receive interrupt
-	UCSR0B |= (1<<RXCIE0);
+	UCSR0B |= (1<<RXCIE0) | (1<<RXEN0);
 }
 
 void convertToPacket(unsigned int speed){

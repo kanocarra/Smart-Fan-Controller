@@ -28,7 +28,7 @@ enum Errors errorStatus = NONE;
 int main(void)	
 {	
 
-	State currentState = start;
+	State currentState = sleep;
 	errorStatus = NONE;
 	speedControl.currentSpeed = 0;
 	speedControl.requestedSpeed = 0;
@@ -36,16 +36,14 @@ int main(void)
 	packet.transmissionComplete = 0;
 	power.averagePower = 0;
 	speedControl.isCalibrated = 0;
-	speedControl.requestedSpeed = 2700;
 	
 	initialiseUART();
-	/*enableStartFrameDetection();*/
+	enableStartFrameDetection();
 
 	if(errorStatus == LOCKED){
 		currentState = fanLocked;
 	}
 	sei();
-
 
 	while(1) {	
 		currentState = (State)currentState();
@@ -61,14 +59,11 @@ State idle() {
 }
 
 State receiveData(){
-	
-	uint8_t conversionComplete = 0;
 
 	switch(packet.messageId) {
 			
 		case SPEED_REQUEST:
 			disableReceiver();
-
 			//Set the new requested speed
 			setRequestedSpeed(packet.requestedSpeed);	
 			
@@ -82,34 +77,38 @@ State receiveData(){
 			enableReceiver();
 
 			if(speedControl.requestedSpeed <= 0){
+				WDTCSR &= ~(WDTCSR);
+				wdt_enable(WDTO_15MS);
 				return (State)sleep;
 			} else if(speedControl.currentSpeed == 0){
 				return (State)start;
 			}
-
+			
 			packet.transmissionStart = 0; 
 			
 			break;
 		
 		case STATUS_REQUEST:
+			if(!packet.statusSent){
+				disableReceiver();
+				initialiseADC();
+				_delay_ms(100);
+				sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed, power.averagePower, errorStatus);
+
+				// Reset transmission for a new frame
+				packet.transmissionComplete = 0;
 			
-			disableReceiver();
-			initialiseADC();
-
-			_delay_ms(100);
-
-			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed, power.averagePower, errorStatus);
-
-			// Reset transmission for a new frame
-			packet.transmissionComplete = 0;
-				
-			// Reset message ID
-			packet.messageId = 0;
+				// Reset message ID
+				packet.messageId = 0;
 			
-			//Clear transmission start
-			packet.transmissionStart = 0;
-			_delay_ms(100);
-			enableReceiver();
+				//Clear transmission start
+				packet.transmissionStart = 0;
+				USART_Flush();
+				_delay_ms(100);
+
+				enableReceiver();
+			}
+			
 			break;
 		
 		default:
@@ -123,11 +122,15 @@ State receiveData(){
 	return (State)controlSpeed;
 }
 
+void USART_Flush( void )
+{
+	unsigned char dummy;
+	while ( UCSR0A & (1<<RXC0) ) dummy = UDR0;
+}
 
 State start(){
 	initialisePWM(F_PWM, 0.75, 1);
 	intialiseSpeedTimer();
-	//initialiseADC();
 
 	_delay_ms(1000);
 	//intialiseBlockedDuct();
@@ -153,7 +156,6 @@ State controlSpeed(){
 	if(errorStatus == LOCKED) {
 		return (State)fanLocked;
 	} else if(errorStatus == BLOCKED) {
-		
 		return (State)blockedDuct;	 	 
 	} else if(packet.transmissionComplete) {
 		return (State)receiveData;
@@ -189,6 +191,7 @@ State fanLocked(){
 
 State blockedDuct(){
 	//sendError('B');
+	errorStatus = NONE;
 	//_delay_ms(1000);
 	return (State)controlSpeed;
 }
