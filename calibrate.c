@@ -7,6 +7,8 @@
   #include <avr/io.h>
   #include <avr/interrupt.h>
   #include <stdio.h>
+  #include <math.h>
+
 
   #define MAX_SPEED_VALUE 240 
   #include "prototypes.h"
@@ -39,25 +41,24 @@ void intialiseBlockedDuct(){
 
 uint8_t checkBlockDuct(float speed){
 
+	//polynomial cal
+	float a = 2.0 * (pow(10, -12.0));
+	float b = -1.0 * (pow(10, -8.0));
+	float c = 2.0 * (pow(10, -5.0));
+	float d = 0.0218;
+	float e = 4.8874;
 
-	//blockedControl.dutyCycleSamples[0]=0;
-	//blockedControl.dutyCycleSamples[1]=32;
-	//blockedControl.dutyCycleSamples[2]=59;
-//
-	//uint8_t speedIndex = (uint8_t)(speed/10.0) - 30;
-	//uint8_t expectedDutyCycle = blockedControl.dutyCycleSamples[speedIndex];
-//
-//
-	//return ((pwm.dutyCycle*100) < (0.8*expectedDutyCycle) || (pwm.dutyCycle*100) > (1.2*expectedDutyCycle));
-
-	float expectedDutyCycle = 0.0256*(speedControl.currentSpeed) + 7.8292;
+	//polynomial calculations
+	float expectedDutyCycle  = a*(pow(speed, 4)) - b*(pow(speed, 3)) + c*(pow(speed, 2)) + d*(speed) + e;
+	//linear calculations 
+	float expectedDutyCycleOne = 0.0256*(speed) + 7.8292;
 		
-	if(speedControl.currentSpeed < 900){
+	if(speed < 350){
 	
-	return ((pwm.dutyCycle*100.0) > (1.01*expectedDutyCycle));
+	return ((pwm.dutyCycle*100.0) > (1.1*expectedDutyCycle));
 	
-	}else{
+	}else if(speed>2000){
 
-		return ((pwm.dutyCycle*100.0) > (1.1*expectedDutyCycle));
+		return ((pwm.dutyCycle*100.0) > (1.1*expectedDutyCycleOne));
 	}
 }

@@ -28,7 +28,7 @@ enum Errors errorStatus = NONE;
 int main(void)	
 {	
 
-	State currentState = sleep;
+	State currentState = start;
 	errorStatus = NONE;
 	speedControl.currentSpeed = 0;
 	speedControl.requestedSpeed = 0;
@@ -36,19 +36,16 @@ int main(void)
 	packet.transmissionComplete = 0;
 	power.averagePower = 0;
 	speedControl.isCalibrated = 0;
+	speedControl.requestedSpeed = 2700;
 	
 	initialiseUART();
-	enableStartFrameDetection();
+	/*enableStartFrameDetection();*/
 
 	if(errorStatus == LOCKED){
 		currentState = fanLocked;
 	}
 	sei();
 
-	DDRA |= (1<<PORTA0);
-	
-	initialiseUART();
-	enableStartFrameDetection();
 
 	while(1) {	
 		currentState = (State)currentState();
@@ -130,7 +127,7 @@ State receiveData(){
 State start(){
 	initialisePWM(F_PWM, 0.75, 1);
 	intialiseSpeedTimer();
-	initialiseADC();
+	//initialiseADC();
 
 	_delay_ms(1000);
 	//intialiseBlockedDuct();
@@ -191,8 +188,8 @@ State fanLocked(){
 } 
 
 State blockedDuct(){
-	sendError('B');
-	_delay_ms(1000);
+	//sendError('B');
+	//_delay_ms(1000);
 	return (State)controlSpeed;
 }
 

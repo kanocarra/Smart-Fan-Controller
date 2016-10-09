@@ -96,6 +96,7 @@
 		//sendSpeedRpm(speedControl.currentSpeed);
 		if(speedControl.isCalibrated){
 			if(checkBlockDuct(speedControl.currentSpeed)){
+			TransmitUART(99);
 				errorStatus = BLOCKED;
 			} else {
 				errorStatus = NONE;

@@ -164,7 +164,7 @@ void switchChannel(int currentChannel){
  void calcRMScurrent(void){
 	 power.RMScurrent = sqrt(power.sqCurrentSum/numConversions);
 	 power.sqCurrentSum = 0.0;
-	 sendCurrent(power.RMScurrent);
+	 //sendCurrent(power.RMScurrent);
  }
 
  void calcRMSvoltage(void){
