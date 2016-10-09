@@ -14,6 +14,7 @@
 
 extern struct SpeedController speedControl;
 extern struct PwmController pwmController;
+extern struct CommunicationsController communicationsController;
   
  ISR(TIMER1_OVF_vect){
 
@@ -31,24 +32,20 @@ extern struct PwmController pwmController;
 	 TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
 
  }
+ 
+ ISR(WDT_vect) {
+	 if(communicationsController.transmissionStart) {
+		errorStatus = NONE;
+	 } else {
+		errorStatus = LOCKED;
+	 }
+ }
 
 void intialiseBlockedDuct(){
 	
 	unsigned int i;
 	unsigned int newRequestedSpeed;
 	disableReceiver();
-	
-	//for(i = 0; i < MAX_SPEED_VALUE ; i++){
-		//newRequestedSpeed = (i+30)*10;
-		//setRequestedSpeed(newRequestedSpeed);
-		////sendSpeedRpm(newRequestedSpeed);
-		//while((newRequestedSpeed - speedControl.currentSpeed) >= 20){
-			//setRequestedSpeed(newRequestedSpeed);
-		//}
-//
-		//blockedControl.dutyCycleSamples[i] =  (uint8_t)(pwm.dutyCycle * 100.0);
-	//}
-	
 	speedControl.isCalibrated = 1;
 	enableReceiver();
 }
@@ -66,11 +63,11 @@ uint8_t checkBlockDuct(float speed){
 	float expectedDutyCycle  = a*(pow(speed, 4)) - b*(pow(speed, 3)) + c*(pow(speed, 2)) + d*(speed) + e;
 	
 	//linear calculations 
-	float expectedDutyCyclelinear = 0.0254*(speed) + 7.6481 ;
+	float expectedDutyCyclelinear = 0.0254*(speed) + 7.6481;
 
 		
 	if(speed < 350){
-	
+		
 		return ((pwmController.dutyCycle*100.0) > (1.01*expectedDutyCycle));
 	
 	}else if(speed > 350 && speed <= 700){

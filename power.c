@@ -19,10 +19,11 @@
  #define VDR_R1 100.0
  #define VDR_R2 56.0
  #define GAIN 3.55
+ #define CALIBRATION_FACTOR 1.1
 
  struct PowerController powerController;
  
- enum Parameters {
+ static enum Parameters {
 	 CURRENT,
 	 VOLTAGE,
  };
@@ -70,7 +71,6 @@ ISR(TIMER2_COMPB_vect){
 		}
 		powerController.numConversions = 0.0;
 		powerController.cycles = 0.0;
-		
 	}
 
 }
@@ -80,7 +80,7 @@ ISR(ADC_vect){
 	switch(calculatedParameter){
 		
 		case CURRENT:
-		powerController.current = ((float)(ADC) * (V_REF/ADC_RESOLUTION))/R_SHUNT;
+		powerController.current = CALIBRATION_FACTOR * ((float)(ADC) * (V_REF/ADC_RESOLUTION))/R_SHUNT;
 		powerController.sqCurrentSum = powerController.sqCurrentSum + pow(powerController.current, 2.0);
 		powerController.numConversions++;
 		powerController.pulseSample++;

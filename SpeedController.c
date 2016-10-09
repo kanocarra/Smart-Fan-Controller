@@ -70,16 +70,7 @@
 		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/speedControl.prescaler);
 		 setSpeed();
 		 speedControl.sampleCounter = 0;
-		 
-		if(speedControl.isCalibrated){
-			if(checkBlockDuct(speedControl.currentSpeed)){
-				//errorStatus = BLOCKED;
-			} else if(errorStatus == BLOCKED) {
-				//errorStatus = NONE;
-			}
-		}
 	}
-
  }
 
  // Calculates the average RPM and clears the speed sample array
@@ -118,7 +109,25 @@
 	 double Min = 0;
 	
 	 float error = speedControl.requestedSpeed - speedControl.currentSpeed;
+		
+		//If is within target speed, chekc for blocked duct
+		if(error < 200) {
+			if(speedControl.isCalibrated){
+				if(checkBlockDuct(speedControl.currentSpeed)){
+					if(!errorStatus == LOCKED){
+						speedControl.blockedCount++;
+						if(speedControl.blockedCount > 10){
+							errorStatus = BLOCKED;
+							speedControl.blockedCount = 0;
+						}
+					}
+					} else if(errorStatus == BLOCKED) {
+					errorStatus = NONE;
+				}
+			}
+	} 
 	 
+	 // If error is too large, reduce step size
 	 if(error < -700){
 		 error = -200;
 	 }
@@ -126,8 +135,11 @@
 	 speedControl.errorSum = (speedControl.errorSum + error) * speedControl.sampleTime;
 
 	 //clamp the integral term between 0 and 400 to prevent integral windup
-	 if(speedControl.errorSum > Max) speedControl.errorSum = Max;
-	 else if(speedControl.errorSum < Min) speedControl.errorSum = Min;
+	 if(speedControl.errorSum > Max) {
+		 speedControl.errorSum = Max;
+	 } else if(speedControl.errorSum < Min) {
+		 speedControl.errorSum = Min;
+	 }
 
 	 output = kP * error + (kI * speedControl.errorSum) - (kD * (speedControl.currentSpeed - speedControl.lastSpeed)/speedControl.sampleTime); 
 	 
@@ -143,7 +155,7 @@
 	 
  }
 
- void setRequestedSpeed(unsigned int speed){
+ void setRequestedSpeed(uint16_t speed){
 	// Changes requested speed
 	speedControl.requestedSpeed = speed;
 	// Reset errors for controller

@@ -33,11 +33,10 @@ ISR(ANA_COMP0_vect)
  void initialisePwmController(float dutyCycle) {
 	
 	// Set up the PWM parameters
-	pwmController.frequency = F_PWM;
 	pwmController.dutyCycle = dutyCycle;
 	pwmController.prescaler = 1;	
 
-	pwmController.top = (F_CPU/(pwmController.prescaler*pwmController.frequency)) - 1;
+	pwmController.top = (F_CPU/(pwmController.prescaler*F_PWM)) - 1;
 
 	// Initialise timer and analog comparator
 	initialisePWMtimer();

@@ -18,16 +18,15 @@ enum Errors {
 enum Errors errorStatus;
 
 struct PwmController {
-	unsigned long frequency;
 	float dutyCycle;
-	unsigned int prescaler;
+	uint8_t prescaler;
 	uint16_t top;
 };
 
 struct SpeedController{
 	float samples[10];
 	int currentIndex;
-	unsigned int requestedSpeed;
+	uint16_t requestedSpeed;
 	float currentSpeed;
 	float averageSpeed;
 	uint16_t timerCount;
@@ -37,10 +36,10 @@ struct SpeedController{
 	float sampleCounter;
 	float lastSpeed;
 	uint16_t lockedRotorCount;
-	unsigned int prescaler;
+	uint8_t prescaler;
 	uint8_t lockedRotorDection;
 	uint8_t isCalibrated;
-
+	uint8_t blockedCount;
 };
 
 struct PowerController{
@@ -67,12 +66,8 @@ struct CommunicationsController {
 	uint8_t transmissionComplete;
 	uint8_t sendPacket[17];
 	uint8_t sendPacketIndex;
-	unsigned int requestedSpeed; 
-	uint8_t errorSent;
-	uint8_t sendData;
+	uint16_t requestedSpeed; 
 	uint8_t transmissionStart;
-	uint8_t statusSent;
-
 };
 
 /*************************** PWM GENERATION **************************/
@@ -109,7 +104,7 @@ void sendSpeedRpm(float averageSpeed);
 void setSpeed(void);
 
 // Set a new requested speed
-void setRequestedSpeed(unsigned int speed);
+void setRequestedSpeed(uint16_t speed);
 
 //Initialize Locked Rotor 
 void intialiseLockedRotor(void);
@@ -153,7 +148,7 @@ void initialiseUART();
 // Transmit the data over UART
 void TransmitUART(uint8_t TX_data);
 
-void sendStatusReport(unsigned int requestedSpeed, float speed, float power, unsigned int error);
+void sendStatusReport(uint16_t requestedSpeed, float speed, float power,uint8_t error);
 
 void disableReceiver(void);
 
@@ -163,19 +158,13 @@ void disableTransmitter(void);
 
 void enableTransmitter(void);
 
-void convertToPacket(unsigned int speed);
+void convertToPacket(uint16_t speed);
 
 void sendError(char errorType);
 
 void enableStartFrameDetection(void);
 
-void initialiseWatchDogTimer(void);
-
-void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
-
-void turnOffWatchDogTimer(void);
-
-void convertDecimal(float number);
+ void USART_Flush( void );
 
 /**************************** BLOCKED DUCT CALIBRATION ************************/
 /*******************************************************************/
@@ -186,6 +175,15 @@ void intialiseBlockedDuct(void);
 //check if the duct is blocked
  uint8_t checkBlockDuct(float speed);
  
- void USART_Flush( void );
+ 
+ // General functions
+ 
+ void initialiseWatchDogTimer(void);
+
+ void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
+
+ void turnOffWatchDogTimer(void);
+
+ void convertDecimal(float number);
 
 #endif /* PROTOTYPES_H_ */

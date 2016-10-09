@@ -193,7 +193,7 @@ void TransmitUART(uint8_t TX_data)
 	while(!(UCSR0A & (1<<TXC0)));
 }
 
-void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float power, unsigned int error) {
+void sendStatusReport(uint16_t requestedSpeed, float currentSpeed, float power, uint8_t error) {
 	communicationsController.sendPacket[SOURCE_ID] = FAN_ID + TO_ASCII;
 	communicationsController.sendPacket[DEST_ID] = (communicationsController.sourceId) + TO_ASCII;
 	communicationsController.sendPacket[MESSAGE_ID] = R;
@@ -201,7 +201,7 @@ void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float pow
 	convertDecimal(SW_VERSION);
 	
 	convertToPacket(requestedSpeed);
-	convertToPacket((unsigned int)currentSpeed);
+	convertToPacket((uint16_t)currentSpeed);
 	communicationsController.sendPacket[communicationsController.sendPacketIndex] = (uint8_t)(power*10.0) + TO_ASCII;
 	communicationsController.sendPacketIndex++;
 	
@@ -221,7 +221,6 @@ void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float pow
 		TransmitUART(communicationsController.sendPacket[i]);
 		i++;
 	}
-	communicationsController.statusSent = 1;
 	communicationsController.sendPacketIndex = 0;
 	
 }
@@ -236,7 +235,7 @@ void enableReceiver(void) {
 	UCSR0B |= (1<<RXCIE0) | (1<<RXEN0);
 }
 
-void convertToPacket(unsigned int speed){
+void convertToPacket(uint16_t speed){
 	unsigned int factor = 10000;
 	unsigned int convertNumber = speed;
 
@@ -276,7 +275,7 @@ void convertDecimal(float number){
 
 void sendError(char errorType){
 	communicationsController.sendPacket[SOURCE_ID] = FAN_ID + TO_ASCII;
-	communicationsController.sendPacket[DEST_ID] = communicationsController.sourceId + TO_ASCII;
+	communicationsController.sendPacket[DEST_ID] = 0 + TO_ASCII;
 	communicationsController.sendPacket[MESSAGE_ID] = (uint8_t)errorType;
 	communicationsController.sendPacket[3] = END_PACKET;
 	int i = 0;

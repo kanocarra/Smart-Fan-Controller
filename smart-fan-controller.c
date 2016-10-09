@@ -148,7 +148,7 @@ State start(){
 	_delay_ms(4000);
 	
 	//Initialise the locked and blocked detection
-	//intialiseBlockedDuct();
+	intialiseBlockedDuct();
 	intialiseLockedRotor();
 
 	
@@ -182,8 +182,6 @@ State fanLocked(){
 	
 	_delay_ms(100);
 
-	communicationsController.errorSent = 1;
-
 	// Transmission clear
 	communicationsController.transmissionStart = 0;
 	speedControl.currentSpeed = 0;
@@ -203,13 +201,12 @@ State fanLocked(){
 } 
 
 State blockedDuct(){
+	
+	// Send error for blocked
+	sendError('B');
+	
 	// Delay for 1 second
-	//_delay_ms(1000);
-	if(communicationsController.errorSent) {
-		// Send error for blocked
-		//sendError('B');
-		communicationsController.errorSent = 0;
-	}
+	_delay_ms(1000);
 
 	return (State)controlSpeed;
 }
