@@ -95,8 +95,8 @@ State receiveData(){
 			break;
 		
 		case STATUS_REQUEST:
-			
-			// Disbale receiver for transmission
+
+			// Disable receiver for transmission
 			disableReceiver();
 				
 			// Start the ADC to calculate current power
@@ -123,7 +123,7 @@ State receiveData(){
 				
 			// Re-enable the receiver after transmission
 			enableReceiver();
-			
+		
 			break;
 		
 		default:
