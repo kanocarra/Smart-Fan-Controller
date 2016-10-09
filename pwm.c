@@ -8,6 +8,7 @@
 #include <avr/interrupt.h>
 #include <stdio.h>
 #define F_CPU 8000000UL
+#define F_PWM 18000UL
 #include "prototypes.h"
 
 struct pwmParameters pwm;
@@ -29,12 +30,12 @@ ISR(ANA_COMP0_vect)
 
 }
 
- void initialisePWM(unsigned long frequency, float dutyCycle, unsigned int prescaler) {
+ void initialisePwmController(float dutyCycle) {
 	
 	// Set up the PWM parameters
-	pwm.frequency = frequency;
+	pwm.frequency = F_PWM;
 	pwm.dutyCycle = dutyCycle;
-	pwm.prescaler = prescaler;	
+	pwm.prescaler = 1;	
 
 	pwm.top = (F_CPU/(pwm.prescaler*pwm.frequency)) - 1;
 

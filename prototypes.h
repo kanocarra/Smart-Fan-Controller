@@ -54,7 +54,7 @@ struct powerParameters{
 	uint8_t ADCConversionComplete;
 };
 
-struct communicationsPacket {
+struct CommunicationsController {
 	uint8_t index;
 	uint8_t sourceId;
 	uint8_t destinationId;
@@ -62,7 +62,7 @@ struct communicationsPacket {
 	uint8_t speedValues[3];
 	uint8_t speedIndex;
 	uint8_t transmissionComplete;
-	uint8_t sendPacket[14];
+	uint8_t sendPacket[17];
 	uint8_t sendPacketIndex;
 	unsigned int requestedSpeed; 
 	uint8_t errorSent;
@@ -75,7 +75,7 @@ struct communicationsPacket {
 /*************************** PWM GENERATION **************************/
 /********************************************************************/
 
-void initialisePWM(unsigned long frequency, float dutyCycle, unsigned int prescaler);
+void initialisePwmController(float dutyCycle);
 
 // Hall Effect sensor
 void initialiseAnalogComparator(void);
@@ -91,7 +91,7 @@ void setDutyCycle(float gain);
 /*******************************************************************/
 
 // Initialize timer to measure fan speed
-void intialiseSpeedTimer(void);
+void initialiseSpeedController(void);
 
 // Calculate fan speed in rpm
 void pidController(void);
@@ -171,6 +171,8 @@ void initialiseWatchDogTimer(void);
 void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
 
 void turnOffWatchDogTimer(void);
+
+void convertDecimal(float number);
 
 /**************************** BLOCKED DUCT CALIBRATION ************************/
 /*******************************************************************/

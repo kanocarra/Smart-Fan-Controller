@@ -18,16 +18,17 @@
  #include <stdlib.h>
  #include <string.h>
  #define FAN_ID 2
- #define SW_VERSION 1
+ #define SW_VERSION 1.1
  #define END_PACKET 10
   #define R 82
  #define SPEED_REQUEST 83
  #define STATUS_REQUEST 63
  #define CR 13
+ #define TO_ASCII 48
 
  #include "prototypes.h"
 
- struct communicationsPacket packet;
+ struct CommunicationsController communicationsController;
 
   enum ByteReceived {
 	  SOURCE_ID,
@@ -41,94 +42,86 @@
 
   enum ByteReceived commStatus = SOURCE_ID;
   
-ISR(WDT_vect){
-	if(packet.transmissionStart){
-		errorStatus = NONE;
-	} else {
-		packet.errorSent = 0;
-		errorStatus = LOCKED;
-	}
-}
-
 ISR(USART0_RX_vect){
 	uint8_t rX_data = UDR0;
-	switch (packet.index) {
+	switch (communicationsController.index) {
 		case SOURCE_ID:	
-			packet.sourceId = rX_data - 48;
-			packet.index++;
+			communicationsController.sourceId = rX_data - TO_ASCII;
+			communicationsController.index++;
 			break;
 
 		case DEST_ID:
-			packet.destinationId = rX_data - 48;
+			communicationsController.destinationId = rX_data - TO_ASCII;
 			// Checks that the message is addressed to the smart fan otherwise ignores the packet
-			if (packet.destinationId == FAN_ID){
+			if (communicationsController.destinationId == FAN_ID){
+				communicationsController.index++;
 			} else {
-				packet.destinationId = 0;
+				communicationsController.index = LF;
+				communicationsController.destinationId = 0;
 			}
-			packet.index++;
 			break;
 
 		case MESSAGE_ID:
 			// Stores the message ID
-			if (packet.destinationId == FAN_ID){
-				packet.messageId = rX_data;	
-				if(packet.messageId == STATUS_REQUEST){
-					packet.statusSent = 0;
-					packet.index = LF;
-					break;
-				}
+			communicationsController.messageId = rX_data;	
+			if(communicationsController.messageId == STATUS_REQUEST){
+				communicationsController.index = LF;
+			} else {
+				communicationsController.index++;
 			}
-			packet.index++;
 			break;
 
 		case DATA0:
 			// If a new speed is requested
-			if (packet.destinationId == FAN_ID){
-				if(packet.messageId == SPEED_REQUEST){
-					packet.speedValues[packet.speedIndex] =  rX_data - 48;
-					packet.speedIndex++;
-				}
+			if(communicationsController.messageId == SPEED_REQUEST){
+					communicationsController.speedValues[communicationsController.speedIndex] =  rX_data - TO_ASCII;
+					communicationsController.speedIndex++;
 			}
-			packet.index++;
+			communicationsController.index++;
 			
 			break;
 		
 		case DATA1:
-			if (packet.destinationId == FAN_ID){
-				packet.speedValues[packet.speedIndex] =  rX_data - 48;
-				packet.speedIndex++;
-			}
-			packet.index++;
+			communicationsController.speedValues[communicationsController.speedIndex] =  rX_data - TO_ASCII;
+			communicationsController.speedIndex++;
+			communicationsController.index++;
 			break;
 		
 		case DATA2:
-			if (packet.destinationId == FAN_ID){
-				packet.speedValues[packet.speedIndex] =  rX_data - 48;
-				packet.speedIndex++;
-				packet.requestedSpeed = packet.speedValues[0] * 1000 + packet.speedValues[1] * 100 +  packet.speedValues[2] * 10;
-			}
-			packet.index++;
+			communicationsController.speedValues[communicationsController.speedIndex] =  rX_data - TO_ASCII;
+			communicationsController.speedIndex++;
+			communicationsController.requestedSpeed = communicationsController.speedValues[0] * 1000 
+													+ communicationsController.speedValues[1] * 100 
+													+  communicationsController.speedValues[2] * 10;
+			communicationsController.index++;
 			break;
 		
 		case LF:
 			if(rX_data == END_PACKET || rX_data == CR) {
-				if(packet.messageId == SPEED_REQUEST) {
-					packet.requestedSpeed = packet.speedValues[0] * 1000 + packet.speedValues[1] * 100 +  packet.speedValues[2] * 10;
-					packet.speedValues[0] = 0;
-					packet.speedValues[1] = 0;
-					packet.speedValues[2] = 0;
-					packet.transmissionComplete = 1;
-				} 
+				if(communicationsController.messageId == SPEED_REQUEST) {
+					communicationsController.requestedSpeed = communicationsController.speedValues[0] * 1000 
+															+ communicationsController.speedValues[1] * 100 
+															+ communicationsController.speedValues[2] * 10;
+					communicationsController.speedValues[0] = 0;
+					communicationsController.speedValues[1] = 0;
+					communicationsController.speedValues[2] = 0;
+					communicationsController.transmissionComplete = 1;
+				} else if (communicationsController.messageId == STATUS_REQUEST){
+					communicationsController.transmissionComplete = 1;
+				}
+				communicationsController.index = 0;
+			} else {
+				communicationsController.index = LF;
 			}
-			packet.index = 0;
-			packet.speedIndex = 0;
-			packet.destinationId = 0;			
+			communicationsController.speedIndex = 0;
+			communicationsController.destinationId = 0;
+		
 			break;
 		
 		default:
-			packet.index = 0;
-			packet.speedIndex = 0;
-			packet.destinationId = 0;
+			communicationsController.index = 0;
+			communicationsController.speedIndex = 0;
+			communicationsController.destinationId = 0;
 	}
 }
 
@@ -144,7 +137,7 @@ ISR(USART0_START_vect){
 		while(1);
 	}
 
-	packet.transmissionStart = 1;
+	communicationsController.transmissionStart = 1;
 	errorStatus = NONE;
 
 	// Disable receive start interrupt
@@ -160,9 +153,9 @@ void initialiseUART()
 
 	// Set the UBRR value based on the baud rate and clock frequency 
 	unsigned int ubrrValue = ((F_CPU)/(BAUD*16)) - 1;
-	packet.index = 0;
-	packet.messageId = 0;
-	packet.speedIndex = 0;
+	communicationsController.index = 0;
+	communicationsController.messageId = 0;
+	communicationsController.speedIndex = 0;
 
 	// Setting the UBRR0 value using its High and Low registers
 	UBRR0H = (ubrrValue>>8);
@@ -201,35 +194,35 @@ void TransmitUART(uint8_t TX_data)
 }
 
 void sendStatusReport(unsigned int requestedSpeed, float currentSpeed, float power, unsigned int error) {
-	packet.sendPacket[SOURCE_ID] = FAN_ID;
-	packet.sendPacket[DEST_ID] = packet.sourceId;
-	packet.sendPacket[MESSAGE_ID] = R;
-	packet.sendPacket[DATA0] = SW_VERSION;
-	packet.sendPacketIndex = DATA1;
+	communicationsController.sendPacket[SOURCE_ID] = FAN_ID + TO_ASCII;
+	communicationsController.sendPacket[DEST_ID] = (communicationsController.sourceId) + TO_ASCII;
+	communicationsController.sendPacket[MESSAGE_ID] = R;
+	communicationsController.sendPacketIndex = DATA0;
+	convertDecimal(SW_VERSION);
 	
 	convertToPacket(requestedSpeed);
 	convertToPacket((unsigned int)currentSpeed);
-	packet.sendPacket[packet.sendPacketIndex] = (uint8_t)(power*10.0);
-	packet.sendPacketIndex++;
+	communicationsController.sendPacket[communicationsController.sendPacketIndex] = (uint8_t)(power*10.0) + TO_ASCII;
+	communicationsController.sendPacketIndex++;
 	
 	if(error == NONE){
-		packet.sendPacket[packet.sendPacketIndex] = '-';
+		communicationsController.sendPacket[communicationsController.sendPacketIndex] = '-';
 	} else if(error == LOCKED){
-		packet.sendPacket[packet.sendPacketIndex] = 'L';
+		communicationsController.sendPacket[communicationsController.sendPacketIndex] = 'L';
 	} else if (error == BLOCKED){
-		packet.sendPacket[packet.sendPacketIndex] = 'B';
+		communicationsController.sendPacket[communicationsController.sendPacketIndex] = 'B';
 	}
 	
-	packet.sendPacketIndex++;
+	communicationsController.sendPacketIndex++;
 	
-	packet.sendPacket[packet.sendPacketIndex] = END_PACKET;
+	communicationsController.sendPacket[communicationsController.sendPacketIndex] = END_PACKET;
 	int i = 0;
-	while(i <= packet.sendPacketIndex){
-		TransmitUART(packet.sendPacket[i]);
+	while(i <= communicationsController.sendPacketIndex){
+		TransmitUART(communicationsController.sendPacket[i]);
 		i++;
 	}
-	packet.statusSent = 1;
-	packet.sendPacketIndex = 0;
+	communicationsController.statusSent = 1;
+	communicationsController.sendPacketIndex = 0;
 	
 }
 
@@ -244,51 +237,65 @@ void enableReceiver(void) {
 }
 
 void convertToPacket(unsigned int speed){
-		unsigned int factor = 10000;
-		unsigned int convertNumber = speed;
+	unsigned int factor = 10000;
+	unsigned int convertNumber = speed;
 
-		//if(num % 1 != 0):
-		//decimal = num % 1
-		//print(decimal)
-
-		//num = int(num)
-		while(factor>10){
-			factor = factor/10;
-			packet.sendPacket[packet.sendPacketIndex] = convertNumber/factor;
-			convertNumber = convertNumber % factor;
-			packet.sendPacketIndex++;
-		}
-}
-
-void sendError(char errorType){
-	packet.sendPacket[SOURCE_ID] = FAN_ID;
-	packet.sendPacket[DEST_ID] = packet.sourceId;
-	packet.sendPacket[MESSAGE_ID] = 76;
-	packet.sendPacket[3] = END_PACKET;
-	int i = 0;
-	while(i < 4){
-		TransmitUART(packet.sendPacket[i]);
-		i++;
+	while(factor>10){
+		factor = factor/10;
+		communicationsController.sendPacket[communicationsController.sendPacketIndex] = (convertNumber/factor) + TO_ASCII;
+		convertNumber = convertNumber % factor;
+		communicationsController.sendPacketIndex++;
 	}
 }
 
-void initialiseWatchDogTimer(void){
+void convertDecimal(float number){
+	unsigned int decimal;
+	uint8_t interger;
+	unsigned int factor = 100;
+	// Round to the nearest 2 decimal place
+	float roundedNumber = roundf(number * 100) / 100; 
+
 	
-	//Clear watchdog flag
-	MCUSR &= ~(1<<WDRF);
-
-	// Write config change protection with watch dog signature
-	CCP = 0xD8;
-
-	WDTCSR |= (1<<WDE);
-
-	//Delay of 1s
-	WDTCSR |= (1<< WDP1) | (1<<WDP2);
-
-	// Enable watchdog timer interrupt
-	WDTCSR |= (1<< WDIE) | (1<< WDE);
-
+	interger = (uint8_t)(roundedNumber);
+	decimal = (100.0) * (roundedNumber - interger);
+	
+	communicationsController.sendPacket[communicationsController.sendPacketIndex] = interger + TO_ASCII;
+	communicationsController.sendPacketIndex++;
+	
+	communicationsController.sendPacket[communicationsController.sendPacketIndex] = '.';
+	communicationsController.sendPacketIndex++;
+	
+	while(factor>10){
+		factor = factor/10;
+		communicationsController.sendPacket[communicationsController.sendPacketIndex] = (decimal/factor) + TO_ASCII;
+		decimal = decimal % factor;
+		communicationsController.sendPacketIndex++;
+	}
+	
 }
+
+void sendError(char errorType){
+	communicationsController.sendPacket[SOURCE_ID] = FAN_ID;
+	communicationsController.sendPacket[DEST_ID] = communicationsController.sourceId;
+	communicationsController.sendPacket[MESSAGE_ID] = 76;
+	communicationsController.sendPacket[3] = END_PACKET;
+	int i = 0;
+	while(i < 4){
+		TransmitUART(communicationsController.sendPacket[i]);
+		i++;
+	}
+	communicationsController.errorSent = 1;
+}
+
+// Flushes the data register
+void USART_Flush( void )
+{
+	unsigned char data;
+	while ( UCSR0A & (1<<RXC0) ) data = UDR0;
+}
+
+
+// Send functions for testing purposes
 
 void sendSpeedRpm(float averageSpeed){
 	uint8_t tx_data = (uint8_t)(averageSpeed/10.0);
