@@ -11,7 +11,7 @@
 #define F_PWM 18000UL
 #include "prototypes.h"
 
-struct pwmParameters pwm;
+struct PwmController pwmController;
 
 ISR(ANA_COMP0_vect)
 {
@@ -33,11 +33,11 @@ ISR(ANA_COMP0_vect)
  void initialisePwmController(float dutyCycle) {
 	
 	// Set up the PWM parameters
-	pwm.frequency = F_PWM;
-	pwm.dutyCycle = dutyCycle;
-	pwm.prescaler = 1;	
+	pwmController.frequency = F_PWM;
+	pwmController.dutyCycle = dutyCycle;
+	pwmController.prescaler = 1;	
 
-	pwm.top = (F_CPU/(pwm.prescaler*pwm.frequency)) - 1;
+	pwmController.top = (F_CPU/(pwmController.prescaler*pwmController.frequency)) - 1;
 
 	// Initialise timer and analog comparator
 	initialisePWMtimer();
@@ -54,7 +54,7 @@ ISR(ANA_COMP0_vect)
 	 DDRA |= (1<<PORTA6);
 
 	 //defined TOP value for "WGM 1110"
-	 ICR2 = pwm.top;
+	 ICR2 = pwmController.top;
 	 
 	 //clear registers in charge of set points
 	 TCCR2A &= ~(TCCR2A);
@@ -101,8 +101,8 @@ ISR(ANA_COMP0_vect)
  }
 
  void setDutyCycle(float gain) {
-	pwm.dutyCycle = gain * pwm.dutyCycle;
-	uint16_t compareCount = pwm.dutyCycle*pwm.top;
+	pwmController.dutyCycle = gain * pwmController.dutyCycle;
+	uint16_t compareCount = pwmController.dutyCycle*pwmController.top;
 	OCR2A = compareCount;
 	OCR2B = compareCount;
  }

@@ -11,11 +11,9 @@
   #define MAX_SPEED_VALUE 240 
   #include "prototypes.h"
 
-  extern struct speedParameters speedControl;
-  extern struct pwmParameters pwm;
+  extern struct SpeedController speedControl;
+  extern struct PwmController pwmController;
   
-
- 
  ISR(TIMER1_OVF_vect){
 
 	 //Disable interrupt enable on Hall effect
@@ -60,11 +58,11 @@ uint8_t checkBlockDuct(float speed){
 		
 	if(speedControl.currentSpeed < 900){
 	
-	return ((pwm.dutyCycle*100.0) > (1.01*expectedDutyCycle));
+	return ((pwmController.dutyCycle*100.0) > (1.01*expectedDutyCycle));
 	
 	}else{
 
-		return ((pwm.dutyCycle*100.0) > (1.1*expectedDutyCycle));
+		return ((pwmController.dutyCycle*100.0) > (1.1*expectedDutyCycle));
 	}
 }
 

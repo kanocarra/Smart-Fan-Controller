@@ -17,14 +17,14 @@ enum Errors {
 
 enum Errors errorStatus;
 
-struct pwmParameters {
+struct PwmController {
 	unsigned long frequency;
 	float dutyCycle;
 	unsigned int prescaler;
 	uint16_t top;
 };
 
-struct speedParameters{
+struct SpeedController{
 	float samples[10];
 	int currentIndex;
 	unsigned int requestedSpeed;
@@ -43,7 +43,7 @@ struct speedParameters{
 
 };
 
-struct powerParameters{
+struct PowerController{
 	float current;
 	float voltage;
 	float sqCurrentSum;
@@ -52,6 +52,9 @@ struct powerParameters{
 	float RMSvoltage;
 	float averagePower;
 	uint8_t ADCConversionComplete;
+	int pulseSample;
+	float numConversions;
+	float cycles;
 };
 
 struct CommunicationsController {

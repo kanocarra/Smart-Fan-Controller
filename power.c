@@ -18,23 +18,25 @@
  #define ADC_I_CHANNEL 11
  #define VDR_R1 100.0
  #define VDR_R2 56.0
+ #define GAIN 3.55
 
- struct powerParameters power;
- //global variable
- int pulseSample = 0;
- float numConversions = 0.0;
- float cycles = 0.0;
- int calculatedParameter = 0; //Calculate Current = 0, Calculate Voltage = 1.
- float gain = 3.55; //(VDR_R1 + VDR_R2)/(VDR_R2);
+ struct PowerController powerController;
  
+ enum Parameters {
+	 CURRENT,
+	 VOLTAGE,
+ };
+
+ enum Parameters calculatedParameter;
+
 //Interrupts 
 ISR(TIMER2_COMPB_vect){
 	
-	if(cycles < 21){
+	if(powerController.cycles < 21){
 		// Enable ADC interrupt
 		ADCSRA |= (1<<ADIE);
 		ADCSRA |= (1<<ADSC);
-		cycles++;
+		powerController.cycles++;
 	} else {
 		
 		switch (calculatedParameter){
@@ -42,14 +44,14 @@ ISR(TIMER2_COMPB_vect){
 			case 0: 
 			calcRMScurrent();
 			switchChannel(calculatedParameter);
-			calculatedParameter = 1;
+			calculatedParameter = VOLTAGE;
 			break;
 
 			case 1:
 			calcRMSvoltage();
 			switchChannel(calculatedParameter);
 			calcAveragePower();
-			calculatedParameter = 0;
+			calculatedParameter = CURRENT;
 			//Disable ADC Interrupt
 			ADCSRA &= ~(1<<ADIE);
 			//Stop ADC
@@ -66,8 +68,8 @@ ISR(TIMER2_COMPB_vect){
 			break;
 
 		}
-		numConversions = 0.0;
-		cycles = 0.0;
+		powerController.numConversions = 0.0;
+		powerController.cycles = 0.0;
 		
 	}
 
@@ -77,34 +79,34 @@ ISR(ADC_vect){
 
 	switch(calculatedParameter){
 		
-		case 0:
-		power.current = ((float)(ADC) * (V_REF/ADC_RESOLUTION))/R_SHUNT;
-		power.sqCurrentSum = power.sqCurrentSum + pow(power.current, 2.0);
-		numConversions++;
-		pulseSample++;
-		if(pulseSample == 3){
+		case CURRENT:
+		powerController.current = ((float)(ADC) * (V_REF/ADC_RESOLUTION))/R_SHUNT;
+		powerController.sqCurrentSum = powerController.sqCurrentSum + pow(powerController.current, 2.0);
+		powerController.numConversions++;
+		powerController.pulseSample++;
+		if(powerController.pulseSample == 3){
 			//Disable ADC interrupt
 			ADCSRA &= ~(1<<ADIE);
 			//Stop ADC
 			ADCSRA &= ~(1<<ADSC);
 			//Reset the number of pulse samples back to 0
-			pulseSample = 0;
+			powerController.pulseSample = 0;
 		}
 		break;
 
-		case 1:
+		case VOLTAGE:
 		//calculate original voltage
-		power.voltage = gain * ((float)(ADC) * (V_REF/ADC_RESOLUTION));
-		power.sqVoltageSum = power.sqVoltageSum + pow(power.voltage, 2.0);
-		numConversions++;
-		pulseSample++;
-		if(pulseSample == 3){
+		powerController.voltage = GAIN * ((float)(ADC) * (V_REF/ADC_RESOLUTION));
+		powerController.sqVoltageSum = powerController.sqVoltageSum + pow(powerController.voltage, 2.0);
+		powerController.numConversions++;
+		powerController.pulseSample++;
+		if(powerController.pulseSample == 3){
 			//Disable ADC interrupt
 			ADCSRA &= ~(1<<ADIE);
 			//Stop ADC
 			ADCSRA &= ~(1<<ADSC);
 			//Reset the number of pulse samples back to 0
-			pulseSample = 0;
+			powerController.pulseSample = 0;
 		}
 		break;
 	}
@@ -142,6 +144,12 @@ ISR(ADC_vect){
 
 	 //Enable Timer2 Output Compare Interrupt
 	 TIMSK2 |= (1<<OCIE2B);
+	 
+	 //Reset all variables
+	 powerController.pulseSample = 0;
+	 powerController.numConversions = 0.0;
+	 powerController.cycles = 0.0;
+	 calculatedParameter = CURRENT;
  }
 
 
@@ -169,20 +177,20 @@ void switchChannel(int currentChannel){
  }
 
  void calcRMScurrent(void){
-	 power.RMScurrent = sqrt(power.sqCurrentSum/numConversions);
-	 power.sqCurrentSum = 0.0;
+	 powerController.RMScurrent = sqrt(powerController.sqCurrentSum/powerController.numConversions);
+	 powerController.sqCurrentSum = 0.0;
 	 //sendCurrent(power.RMScurrent);
  }
 
  void calcRMSvoltage(void){
 
-	 power.RMSvoltage = sqrt(power.sqVoltageSum/numConversions);
-	 power.sqVoltageSum = 0.0;
+	 powerController.RMSvoltage = sqrt(powerController.sqVoltageSum/powerController.numConversions);
+	 powerController.sqVoltageSum = 0.0;
 	 //sendVoltage(power.RMSvoltage);
  }
 
  void calcAveragePower(void){
-	 power.averagePower = power.RMSvoltage * power.RMScurrent;
-	 power.ADCConversionComplete = 1;
+	 powerController.averagePower = powerController.RMSvoltage * powerController.RMScurrent;
+	 powerController.ADCConversionComplete = 1;
 	 
  }

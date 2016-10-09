@@ -275,16 +275,16 @@ void convertDecimal(float number){
 }
 
 void sendError(char errorType){
-	communicationsController.sendPacket[SOURCE_ID] = FAN_ID;
-	communicationsController.sendPacket[DEST_ID] = communicationsController.sourceId;
-	communicationsController.sendPacket[MESSAGE_ID] = 76;
+	communicationsController.sendPacket[SOURCE_ID] = FAN_ID + TO_ASCII;
+	communicationsController.sendPacket[DEST_ID] = communicationsController.sourceId + TO_ASCII;
+	communicationsController.sendPacket[MESSAGE_ID] = (uint8_t)errorType;
 	communicationsController.sendPacket[3] = END_PACKET;
 	int i = 0;
 	while(i < 4){
 		TransmitUART(communicationsController.sendPacket[i]);
 		i++;
 	}
-	communicationsController.errorSent = 1;
+	//communicationsController.errorSent = 1;
 }
 
 // Flushes the data register

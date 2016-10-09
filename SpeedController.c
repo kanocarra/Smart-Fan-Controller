@@ -11,8 +11,7 @@
  #define F_CPU 8000000UL
  #include "prototypes.h"
  #include "error.h"
- struct speedParameters speedControl;
- extern struct pwmParameters pwm;
+ struct SpeedController speedControl;
 
  ISR(TIMER1_CAPT_vect){
 	uint16_t count;
@@ -62,7 +61,7 @@
 	float mechanicalFrequency = (uint8_t)((F_CPU/speedControl.prescaler)/speedControl.timerCount);
 	speedControl.currentSpeed = ((mechanicalFrequency * 60)/3);
 	
-	 if(speedControl.currentIndex < 10) {
+	 if(speedControl.currentIndex < 9) {
 		 speedControl.samples[speedControl.currentIndex] = speedControl.currentSpeed;
 		 speedControl.currentIndex++;
 	 } else {
@@ -72,12 +71,11 @@
 		 setSpeed();
 		 speedControl.sampleCounter = 0;
 		 
-		//sendSpeedRpm(speedControl.currentSpeed);
 		if(speedControl.isCalibrated){
 			if(checkBlockDuct(speedControl.currentSpeed)){
-				errorStatus = BLOCKED;
-			} else {
-				errorStatus = NONE;
+				//errorStatus = BLOCKED;
+			} else if(errorStatus == BLOCKED) {
+				//errorStatus = NONE;
 			}
 		}
 	}

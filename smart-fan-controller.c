@@ -18,9 +18,9 @@
 
 #define SPEED_REQUEST 83
 #define STATUS_REQUEST 63
-extern struct pwmParameters pwm;
-extern struct speedParameters speedControl;
-extern struct powerParameters power;
+extern struct PwmController pwmController;
+extern struct SpeedController speedControl;
+extern struct PowerController powerController;
 extern struct CommunicationsController communicationsController;
 enum Errors errorStatus = NONE;
 
@@ -33,7 +33,7 @@ int main(void)
 	speedControl.requestedSpeed = 0;
 	communicationsController.transmissionStart = 0;
 	communicationsController.transmissionComplete = 0;
-	power.averagePower = 0;
+	powerController.averagePower = 0;
 	speedControl.isCalibrated = 0;
 	
 	initialiseUART();
@@ -105,7 +105,7 @@ State receiveData(){
 			_delay_ms(100);
 				
 			// Send the status report
-			sendStatusReport(speedControl.requestedSpeed, speedControl.averageSpeed, power.averagePower, errorStatus);
+			sendStatusReport(speedControl.requestedSpeed, speedControl.averageSpeed, powerController.averagePower, errorStatus);
 
 			// Reset transmission for a new frame
 			communicationsController.transmissionComplete = 0;
@@ -204,11 +204,10 @@ State fanLocked(){
 
 State blockedDuct(){
 	// Delay for 1 second
-	_delay_ms(1000);
+	//_delay_ms(1000);
 	if(communicationsController.errorSent) {
 		// Send error for blocked
 		//sendError('B');
-		errorStatus = NONE;
 		communicationsController.errorSent = 0;
 	}
 
