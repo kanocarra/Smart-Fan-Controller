@@ -110,21 +110,21 @@
 	
 	 float error = speedControl.requestedSpeed - speedControl.currentSpeed;
 		
-		//If is within target speed, chekc for blocked duct
-		if(error < 200) {
-			if(speedControl.isCalibrated){
-				if(checkBlockDuct(speedControl.currentSpeed)){
-					if(!errorStatus == LOCKED){
-						speedControl.blockedCount++;
-						if(speedControl.blockedCount > 10){
-							errorStatus = BLOCKED;
-							speedControl.blockedCount = 0;
-						}
+		//If is within target speed, check for blocked duct
+	if(error < 200 && error > -200) {
+		if(speedControl.isCalibrated){
+			if(checkBlockDuct(speedControl.currentSpeed)){
+				if(!errorStatus == LOCKED){
+					speedControl.blockedCount++;
+					if(speedControl.blockedCount > (speedControl.currentSpeed/30)){
+						errorStatus = BLOCKED;
+						speedControl.blockedCount = 0;
 					}
-					} else if(errorStatus == BLOCKED) {
-					errorStatus = NONE;
 				}
+				} else if(errorStatus == BLOCKED) {
+				errorStatus = NONE;
 			}
+		}
 	} 
 	 
 	 // If error is too large, reduce step size
