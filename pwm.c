@@ -30,20 +30,20 @@ ISR(ANA_COMP0_vect)
 
 }
 
- void initialisePwmController(float dutyCycle) {
+ void initialisePwmController(float dutyCycle, uint8_t pin) {
 	
 	// Set up the PWM parameters
 	pwmController.dutyCycle = dutyCycle;
-	pwmController.prescaler = 1;	
+	uint8_t prescaler = 1;	
 
-	pwmController.top = (F_CPU/(pwmController.prescaler*F_PWM)) - 1;
+	pwmController.top = (F_CPU/(prescaler*F_PWM)) - 1;
 
 	// Initialise timer and analog comparator
-	initialisePWMtimer();
+	initialisePWMtimer(pin);
 	initialiseAnalogComparator();
  }
 
- void initialisePWMtimer(void){
+ void initialisePWMtimer(uint8_t pin){
 
 	 //Adjust duty cycle
 	setDutyCycle(1);
@@ -74,11 +74,30 @@ ISR(ANA_COMP0_vect)
 	 TOCPMCOE &= ~(TOCPMCOE);
 
 	 //Enable PWM Channel on TOCC3 first
-	 TOCPMCOE |= (1<<TOCC3OE);
+	 TOCPMCOE |= (1<<pin);
 
 	 //clk pre-scaler = 1 & start timer
 	 TCCR2B |= (1<<CS20);
 
+ }
+ 
+ void stopFan(void) {
+	 //Clear PWM registers
+	TCCR2A &= ~(TCCR2A);
+	TCCR2B &= ~(TCCR2B);
+	TOCPMSA0 &= ~(TOCPMSA0);
+	TOCPMSA1 &= ~(TOCPMSA1);
+	TOCPMCOE &= ~(TOCPMCOE);
+	ICR2 = 0;
+	
+	//Clear speed control registers
+	TCCR1B &= ~(TCCR1B);
+	TIMSK1 &=~(TIMSK1) ;
+	ICR1 = 0;
+	
+	//Clear analog comparator registers
+	ACSR0A &= ~(ACSR0A);
+	ACSR0B &= ~(ACSR0B);
  }
 
  void initialiseAnalogComparator(void){

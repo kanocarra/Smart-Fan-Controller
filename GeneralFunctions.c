@@ -40,15 +40,3 @@ void wdt_init(void)
 	wdt_disable();
 	return;
 }
-
-void delaySeconds(unsigned int seconds){
-	 int i;
-
-	 unsigned int delay = 32 * seconds;
-	 // Delay for about 4 seconds
-	 for(i = 0; i < delay; i++){
-		 while(!(TIFR0 & (1<<TOV0)));
-		 TIFR0 |= (1<<TOV0);
-	 }
-
-}

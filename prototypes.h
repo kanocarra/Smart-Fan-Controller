@@ -19,7 +19,6 @@ enum Errors errorStatus;
 
 struct PwmController {
 	float dutyCycle;
-	uint8_t prescaler;
 	uint16_t top;
 };
 
@@ -52,8 +51,8 @@ struct PowerController{
 	float averagePower;
 	uint8_t ADCConversionComplete;
 	int pulseSample;
-	float numConversions;
-	float cycles;
+	uint16_t numConversions;
+	uint16_t cycles;
 };
 
 struct CommunicationsController {
@@ -73,16 +72,19 @@ struct CommunicationsController {
 /*************************** PWM GENERATION **************************/
 /********************************************************************/
 
-void initialisePwmController(float dutyCycle);
+void initialisePwmController(float dutyCycle, uint8_t pin);
 
 // Hall Effect sensor
 void initialiseAnalogComparator(void);
 
 //PWM waveform generation
-void initialisePWMtimer(void);
+void initialisePWMtimer(uint8_t pin);
 
 // Adjust the PWM duty cycle
 void setDutyCycle(float gain);
+
+//Stops the fan
+ void stopFan(void);
 
 
 /************************* FAN SPEED CONTROL ************************/

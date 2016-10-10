@@ -10,7 +10,6 @@
 
  #define F_CPU 8000000UL
  #include "prototypes.h"
- #include "error.h"
  struct SpeedController speedControl;
 
  ISR(TIMER1_CAPT_vect){
@@ -61,7 +60,13 @@
 	float mechanicalFrequency = (uint8_t)((F_CPU/speedControl.prescaler)/speedControl.timerCount);
 	speedControl.currentSpeed = ((mechanicalFrequency * 60)/3);
 	
-	 if(speedControl.currentIndex < 9) {
+	uint8_t sampleSize = 10;
+	
+	//if(speedControl.currentSpeed < 600) {
+		//sampleSize = 5;
+	//}
+	//
+	 if(speedControl.currentIndex < sampleSize) {
 		 speedControl.samples[speedControl.currentIndex] = speedControl.currentSpeed;
 		 speedControl.currentIndex++;
 	 } else {
@@ -125,7 +130,7 @@
 				errorStatus = NONE;
 			}
 		}
-	} 
+	}
 	 
 	 // If error is too large, reduce step size
 	 if(error < -700){

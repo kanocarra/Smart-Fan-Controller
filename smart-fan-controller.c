@@ -139,18 +139,57 @@ State receiveData(){
 
 State start(){
 	
+	uint8_t pwmPin = TOCC5OE;
+	
 	// Initialise PWM with given duty cycle and frequency
-	initialisePwmController(0.6);
+	initialisePwmController(0.6, pwmPin);
 	
 	// Initialise the speed control
 	initialiseSpeedController();
-
-	_delay_ms(4000);
 	
+	_delay_ms(1000);
+	
+	uint16_t speedPin3 = speedControl.currentSpeed;
+	
+	cli();
+	
+	stopFan();
+	
+	_delay_ms(1000);
+	
+	sei();
+	pwmPin = TOCC3OE;
+	
+	initialisePwmController(0.6, pwmPin);
+	
+	// Initialise the speed control
+	initialiseSpeedController();
+	
+	_delay_ms(1000);
+	
+	uint16_t speedPin5 = speedControl.currentSpeed;
+	
+	cli();
+		
+	stopFan();
+		
+	_delay_ms(1000);
+		
+	sei();
+	
+	if(speedPin3 > speedPin5) {
+		pwmPin = TOCC3OE;
+	}
+	
+	initialisePwmController(0.6, pwmPin);
+		
+	// Initialise the speed control
+	initialiseSpeedController();
+	
+	_delay_ms(1000);
 	//Initialise the locked and blocked detection
 	intialiseBlockedDuct();
 	intialiseLockedRotor();
-
 	
 	return (State)controlSpeed;
 }
