@@ -89,12 +89,11 @@ State receiveData(){
 			break;
 		
 		case STATUS_REQUEST:
-			if(!packet.statusSent){
+			//if(!packet.statusSent){
 				disableReceiver();
-				initialiseADC();
+				//initialiseADC();
 				_delay_ms(100);
-				sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed, power.averagePower, errorStatus);
-
+				//sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed, (pwm.dutyCycle*10.0), errorStatus);
 				// Reset transmission for a new frame
 				packet.transmissionComplete = 0;
 			
@@ -103,11 +102,11 @@ State receiveData(){
 			
 				//Clear transmission start
 				packet.transmissionStart = 0;
-				USART_Flush();
+			//	USART_Flush();
 				_delay_ms(100);
 
 				enableReceiver();
-			}
+		//	}
 			
 			break;
 		

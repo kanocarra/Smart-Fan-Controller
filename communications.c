@@ -70,15 +70,18 @@ ISR(USART0_RX_vect){
 
 		case MESSAGE_ID:
 			// Stores the message ID
-			if (packet.destinationId == FAN_ID){
+			//if (packet.destinationId == FAN_ID){
 				packet.messageId = rX_data;	
 				if(packet.messageId == STATUS_REQUEST){
 					packet.statusSent = 0;
 					packet.index = LF;
 					break;
+				}else{
+				packet.index++;
 				}
-			}
-			packet.index++;
+			//}
+			//packet.index++;
+
 			break;
 
 		case DATA0:

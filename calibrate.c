@@ -42,23 +42,46 @@ void intialiseBlockedDuct(){
 uint8_t checkBlockDuct(float speed){
 
 	//polynomial cal
-	float a = 2.0 * (pow(10, -12.0));
-	float b = -1.0 * (pow(10, -8.0));
-	float c = 2.0 * (pow(10, -5.0));
-	float d = 0.0218;
-	float e = 4.8874;
-
+	float a = 3.0 * (pow(10, -12.0));
+	float b = -2.0 * (pow(10, -8.0));
+	float c = 3.0 * (pow(10, -5.0));
+	float d = 0.011;
+	float e = 7.2499;
+	 
 	//polynomial calculations
 	float expectedDutyCycle  = a*(pow(speed, 4)) - b*(pow(speed, 3)) + c*(pow(speed, 2)) + d*(speed) + e;
+	
 	//linear calculations 
-	float expectedDutyCycleOne = 0.0256*(speed) + 7.8292;
+	float expectedDutyCyclelinear = 0.0254*(speed) + 7.6481 ;
+
+	//TransmitUART(expectedDutyCycle);
+	//TransmitUART(pwm.dutyCycle*100.0);
+
 		
 	if(speed < 350){
 	
-	return ((pwm.dutyCycle*100.0) > (1.1*expectedDutyCycle));
+		return ((pwm.dutyCycle*100.0) > (1.01 * expectedDutyCycle));
 	
-	}else if(speed>2000){
+	}else if(speed > 350 && speed <= 700){
 
-		return ((pwm.dutyCycle*100.0) > (1.1*expectedDutyCycleOne));
+		return ((pwm.dutyCycle*100.0) > (1.001 * expectedDutyCyclelinear));
+
+	}else if( speed > 700 && speed <= 800){
+
+		return ((pwm.dutyCycle*100.0) > (1.05 * expectedDutyCyclelinear));
+	
+	}else if (speed > 800 && speed <= 1250){
+
+		return ((pwm.dutyCycle*100.0) > (1.1 * expectedDutyCyclelinear));
+
+	}else if(speed > 1250 && speed <= 1550){
+
+		return ((pwm.dutyCycle*100.0) > (1.13 * expectedDutyCyclelinear));
+
+	}else {
+
+		return ((pwm.dutyCycle*100.0) > (1.1 * expectedDutyCyclelinear));
+
+
 	}
 }

@@ -93,6 +93,7 @@
 		 setSpeed();
 		 speedControl.sampleCounter = 0;
 		 
+
 		//sendSpeedRpm(speedControl.currentSpeed);
 		if(speedControl.isCalibrated){
 			if(checkBlockDuct(speedControl.currentSpeed)){
