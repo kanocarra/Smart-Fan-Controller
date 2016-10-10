@@ -147,8 +147,8 @@ ISR(ADC_vect){
 	 
 	 //Reset all variables
 	 powerController.pulseSample = 0;
-	 powerController.numConversions = 0.0;
-	 powerController.cycles = 0.0;
+	 powerController.numConversions = 0;
+	 powerController.cycles = 0;
 	 calculatedParameter = CURRENT;
  }
 
@@ -177,14 +177,14 @@ void switchChannel(int currentChannel){
  }
 
  void calcRMScurrent(void){
-	 powerController.RMScurrent = sqrt(powerController.sqCurrentSum/powerController.numConversions);
+	 powerController.RMScurrent = sqrt(powerController.sqCurrentSum/(float)powerController.numConversions);
 	 powerController.sqCurrentSum = 0.0;
 	 //sendCurrent(power.RMScurrent);
  }
 
  void calcRMSvoltage(void){
 
-	 powerController.RMSvoltage = sqrt(powerController.sqVoltageSum/powerController.numConversions);
+	 powerController.RMSvoltage = sqrt(powerController.sqVoltageSum/(float)powerController.numConversions);
 	 powerController.sqVoltageSum = 0.0;
 	 //sendVoltage(power.RMSvoltage);
  }

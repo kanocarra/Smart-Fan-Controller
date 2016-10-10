@@ -241,8 +241,14 @@ State fanLocked(){
 
 State blockedDuct(){
 	
+	//Disable reciever for send
+	disableReceiver();
+	
 	// Send error for blocked
 	sendError('B');
+	
+	//Re-enable receiver
+	enableReceiver();
 	
 	// Delay for 1 second
 	_delay_ms(1000);

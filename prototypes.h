@@ -63,7 +63,7 @@ struct CommunicationsController {
 	uint8_t speedValues[3];
 	uint8_t speedIndex;
 	uint8_t transmissionComplete;
-	uint8_t sendPacket[17];
+	uint8_t sendPacket[18];
 	uint8_t sendPacketIndex;
 	uint16_t requestedSpeed; 
 	uint8_t transmissionStart;
@@ -176,7 +176,6 @@ void intialiseBlockedDuct(void);
 
 //check if the duct is blocked
  uint8_t checkBlockDuct(float speed);
- 
  
  // General functions
  

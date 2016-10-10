@@ -163,6 +163,7 @@
  void setRequestedSpeed(uint16_t speed){
 	// Changes requested speed
 	speedControl.requestedSpeed = speed;
+	speedControl.blockedCount = 0;
 	// Reset errors for controller
 	speedControl.lastError = 0;
 	speedControl.errorSum = 0;

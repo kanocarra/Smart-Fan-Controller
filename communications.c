@@ -202,8 +202,7 @@ void sendStatusReport(uint16_t requestedSpeed, float currentSpeed, float power, 
 	
 	convertToPacket(requestedSpeed);
 	convertToPacket((uint16_t)currentSpeed);
-	communicationsController.sendPacket[communicationsController.sendPacketIndex] = (uint8_t)(power*10.0) + TO_ASCII;
-	communicationsController.sendPacketIndex++;
+	convertDecimal(power);
 	
 	if(error == NONE){
 		communicationsController.sendPacket[communicationsController.sendPacketIndex] = '-';
@@ -248,12 +247,16 @@ void convertToPacket(uint16_t speed){
 }
 
 void convertDecimal(float number){
-	unsigned int decimal;
+	uint8_t decimal;
 	uint8_t interger;
-	unsigned int factor = 100;
+	uint8_t factor = 100;
+	if(number == 0) {
+		communicationsController.sendPacket[communicationsController.sendPacketIndex] = '-';
+		communicationsController.sendPacketIndex++;	
+		return;	
+	}
 	// Round to the nearest 2 decimal place
 	float roundedNumber = roundf(number * 100) / 100; 
-
 	
 	interger = (uint8_t)(roundedNumber);
 	decimal = (100.0) * (roundedNumber - interger);
