@@ -62,44 +62,14 @@
 	
 	uint8_t sampleSize = 10;
 	
-	//if(speedControl.currentSpeed < 600) {
-		//sampleSize = 5;
-	//}
-	//
 	 if(speedControl.currentIndex < sampleSize) {
-		 speedControl.samples[speedControl.currentIndex] = speedControl.currentSpeed;
 		 speedControl.currentIndex++;
 	 } else {
-	   	 calculateAverageRpm();
 		 speedControl.currentIndex = 0;
 		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/speedControl.prescaler);
 		 setSpeed();
 		 speedControl.sampleCounter = 0;
 	}
- }
-
- // Calculates the average RPM and clears the speed sample array
- void calculateAverageRpm(void){
-	 
-	 float sum = 0;
-	 float prevSpeed = speedControl.samples[0];
-	 int valueCount = 0;
-
-	 for(int i =0; i < speedControl.currentIndex; i++){
-		 // Check that the value is not an out-lier (50% larger than previous reading)
-		 if(prevSpeed * 1.5 >= speedControl.samples[i]){
-			 //Discard the value
-			 speedControl.samples[i] = 0;
-			 prevSpeed = speedControl.samples[i];
-			 } else {
-			 // Add to the total sum
-			 sum = sum + speedControl.samples[i];
-			 prevSpeed = speedControl.samples[i];
-			 speedControl.samples[i] = 0;
-			 valueCount++;
-		 }
-	 }
-	 speedControl.averageSpeed  = sum/valueCount;
  }
 
  void setSpeed(void){
@@ -115,8 +85,9 @@
 	
 	 float error = speedControl.requestedSpeed - speedControl.currentSpeed;
 		
-		//If is within target speed, check for blocked duct
+	//If is within target speed, check for blocked duct
 	if(error < 200 && error > -200) {
+		// Checks that it is calibrated
 		if(speedControl.isCalibrated){
 			if(checkBlockDuct(speedControl.currentSpeed)){
 				if(!errorStatus == LOCKED){
@@ -126,7 +97,7 @@
 						speedControl.blockedCount = 0;
 					}
 				}
-				} else if(errorStatus == BLOCKED) {
+			} else if(errorStatus == BLOCKED) {
 				errorStatus = NONE;
 			}
 		}

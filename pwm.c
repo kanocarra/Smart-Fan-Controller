@@ -7,6 +7,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
+#include <math.h>
 #define F_CPU 8000000UL
 #define F_PWM 18000UL
 #include "prototypes.h"
@@ -120,7 +121,12 @@ ISR(ANA_COMP0_vect)
 
  void setDutyCycle(float gain) {
 	pwmController.dutyCycle = gain * pwmController.dutyCycle;
-	uint16_t compareCount = pwmController.dutyCycle*pwmController.top;
+	if(pwmController.dutyCycle < 0.13) {
+		pwmController.dutyCycle = 0.13;
+	}
+	
+	uint16_t compareCount = (uint16_t)roundf(pwmController.dutyCycle*(float)pwmController.top);
+	
 	OCR2A = compareCount;
 	OCR2B = compareCount;
  }

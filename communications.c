@@ -82,12 +82,14 @@ ISR(USART0_RX_vect){
 			break;
 		
 		case DATA1:
+			// Store second speed value
 			communicationsController.speedValues[communicationsController.speedIndex] =  rX_data - TO_ASCII;
 			communicationsController.speedIndex++;
 			communicationsController.index++;
 			break;
 		
 		case DATA2:
+			//Store third speed value
 			communicationsController.speedValues[communicationsController.speedIndex] =  rX_data - TO_ASCII;
 			communicationsController.speedIndex++;
 			communicationsController.requestedSpeed = communicationsController.speedValues[0] * 1000 

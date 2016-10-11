@@ -42,6 +42,7 @@ int main(void)
 	if(errorStatus == LOCKED){
 		currentState = fanLocked;
 	}
+	
 	sei();
 
 	while(1) {	
@@ -105,7 +106,7 @@ State receiveData(){
 			_delay_ms(100);
 				
 			// Send the status report
-			sendStatusReport(speedControl.requestedSpeed, speedControl.averageSpeed, powerController.averagePower, errorStatus);
+			sendStatusReport(speedControl.requestedSpeed, speedControl.currentSpeed, powerController.averagePower, errorStatus);
 
 			// Reset transmission for a new frame
 			communicationsController.transmissionComplete = 0;
@@ -215,7 +216,7 @@ State controlSpeed(){
 }
 
 State fanLocked(){
-
+	
 	// Send error for locked
 	sendError('L');
 	

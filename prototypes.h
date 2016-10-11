@@ -12,7 +12,8 @@
 enum Errors {
 	NONE,
 	LOCKED,
-	BLOCKED
+	BLOCKED,
+	BOTH
 };
 
 enum Errors errorStatus;
@@ -23,11 +24,9 @@ struct PwmController {
 };
 
 struct SpeedController{
-	float samples[10];
-	int currentIndex;
 	uint16_t requestedSpeed;
 	float currentSpeed;
-	float averageSpeed;
+	uint8_t currentIndex;
 	uint16_t timerCount;
 	float errorSum;
 	float lastError;
