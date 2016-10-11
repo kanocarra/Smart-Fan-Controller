@@ -20,14 +20,9 @@ extern struct CommunicationsController communicationsController;
 
 	 //Disable interrupt enable on Hall effect
 	 ACSR0A &= ~(1<<ACIE0);
+
+	errorStatus = LOCKED;
 	
-	if(errorStatus == BLOCKED) {
-		errorStatus == BOTH;
-	} else {
-		//Send error status
-		errorStatus = LOCKED;
-	}
-	 
 	 //Disable PWM Channel on TOCC3
 	 TOCPMCOE &= ~(1<<TOCC3OE);
 	 //Disable PWM Channel on TOCC5

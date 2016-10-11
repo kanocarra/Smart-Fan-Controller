@@ -12,8 +12,7 @@
 enum Errors {
 	NONE,
 	LOCKED,
-	BLOCKED,
-	BOTH
+	BLOCKED
 };
 
 enum Errors errorStatus;
@@ -71,6 +70,7 @@ struct CommunicationsController {
 /*************************** PWM GENERATION **************************/
 /********************************************************************/
 
+// Initialises PWM with gien duty cycle
 void initialisePwmController(float dutyCycle, uint8_t pin);
 
 // Hall Effect sensor
@@ -107,9 +107,6 @@ void setSpeed(void);
 // Set a new requested speed
 void setRequestedSpeed(uint16_t speed);
 
-//Initialize Locked Rotor 
-void intialiseLockedRotor(void);
-
 
 /******************** POWER CONSUMPTION MEASUREMENT *****************/
 /*******************************************************************/
@@ -139,8 +136,7 @@ void sendVoltage(float RMSvoltage);
 void sendPower(float averagePower);
 
 
-
-/**************************** COMMUNICATIONS ************************/
+/**************************** COMMUNICATIONS CONTROLLER *************/
 /*******************************************************************/
 
 // Initialising UART 
@@ -149,41 +145,54 @@ void initialiseUART();
 // Transmit the data over UART
 void TransmitUART(uint8_t TX_data);
 
+//Send the status report
 void sendStatusReport(uint16_t requestedSpeed, float speed, float power,uint8_t error);
 
+//Disable the receiver and receive interrupt
 void disableReceiver(void);
 
+// Enable receiver and receive interrupt
 void enableReceiver(void);
 
-void disableTransmitter(void);
-
+//Enables the transmitter
 void enableTransmitter(void);
 
+// Converts speed into packet for comms protocol
 void convertToPacket(uint16_t speed);
 
+// Converts float into packet for comms protocol
+void convertDecimal(float number);
+
+// Send the error state
 void sendError(char errorType);
 
+// Enable the receive start interrupt
 void enableStartFrameDetection(void);
 
- void USART_Flush( void );
+// Flush the UART
+void USART_Flush( void );
 
-/**************************** BLOCKED DUCT CALIBRATION ************************/
-/*******************************************************************/
 
-//calibrate the power corresponding at different speeds
-void intialiseBlockedDuct(void);
+/**************************** ERROR CONTROLLER ************************/
+/**********************************************************************/
 
-//check if the duct is blocked
+//Check if the duct is blocked
  uint8_t checkBlockDuct(float speed);
  
- // General functions
+ //Initialize Locked Rotor detection
+ void intialiseLockedRotor(void);
  
+
+/**************************** GENERAL FNCTIONS ************************/
+/**********************************************************************/
+ 
+ // Initialises the watch dog timer
  void initialiseWatchDogTimer(void);
 
+// Makes sure wacthdog doesn't constantly reset program
  void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
 
+// Turns off watch dog timer
  void turnOffWatchDogTimer(void);
-
- void convertDecimal(float number);
 
 #endif /* PROTOTYPES_H_ */
