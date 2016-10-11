@@ -18,6 +18,15 @@
 extern struct SpeedController speedControl;
 extern struct PwmController pwmController;
 extern struct CommunicationsController communicationsController;
+
+// If the watchdog timer wakes-up the micro-controller
+ISR(WDT_vect) {
+	if(communicationsController.transmissionStart) {
+		errorStatus = NONE;
+		} else {
+		errorStatus = LOCKED;
+	}
+}
   
  ISR(TIMER1_OVF_vect){
 

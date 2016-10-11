@@ -184,8 +184,8 @@ State start(){
 	sei();
 	
 	// If pin 5 is a larger speed, it is the correct way
-	if(speedPin5 > speedPin3) {
-		pwmPin = TOCC5OE;
+	if(speedPin3 > speedPin5) {
+		pwmPin = TOCC3OE;
 	}
 	
 	// Start the fan with correct start pin
@@ -208,15 +208,15 @@ State changeDirection(){
 // Main controller that changes state based on error and communication status
 State controlSpeed(){
 	
-	if(errorStatus == LOCKED) {
+	if (communicationsController.transmissionComplete) {
+		return (State)receiveData;
+		
+	} else if(errorStatus == LOCKED) {
 		return (State)fanLocked;
 		
 	} else if(errorStatus == BLOCKED) {
 		return (State)blockedDuct;	 
 			 
-	} else if(communicationsController.transmissionComplete) {
-		return (State)receiveData;
-		
     } else {
 		return(State)controlSpeed;
 	}
