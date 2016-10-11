@@ -1,8 +1,10 @@
 /*
- * communications.c
+ * CommunicationsController.c 
+ * Controller for all communications with the master control
  *
  * Created: 5/09/2016 10:32:14 a.m.
- *  Author: emel269
+ * ELECTENG 311 Smart Fan Project
+ * Group 10
  */ 
 
   #define BAUD 9600UL

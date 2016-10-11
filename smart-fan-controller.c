@@ -1,8 +1,10 @@
 /*
- * Smart Fan Controller
+ * smart-fan-controller.c 
+ * Main controller for the smart fan system
  *
  * Created: 15/08/2016 4:11:57 p.m.
- * Author : emel269
+ * ELECTENG 311 Smart Fan Project
+ * Group 10
  */ 
 
  #define F_CPU 8000000UL
@@ -26,9 +28,11 @@ enum Errors errorStatus = NONE;
 
 int main(void)	
 {	
-	// Put microcontroller into sleep state on start up
+	// Put micro-controller into sleep state on start up
 	State currentState = sleep;
 	errorStatus = NONE;
+	
+	// Reset all variables
 	speedControl.currentSpeed = 0;
 	speedControl.requestedSpeed = 0;
 	communicationsController.transmissionStart = 0;
@@ -40,7 +44,7 @@ int main(void)
 	initialiseUART();
 	enableStartFrameDetection();
 	
-	// If fan is still locked
+	// If fan locked on start up
 	if(errorStatus == LOCKED){
 		currentState = fanLocked;
 	}

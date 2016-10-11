@@ -1,8 +1,10 @@
 /*
- * power.c
+ * PowerController.c 
+ * Controller for power calculations
  *
  * Created: 5/09/2016 6:03:52 p.m.
- *  Author: emel269
+ * ELECTENG 311 Smart Fan Project
+ * Group 10
  */ 
 
  #include <avr/io.h>

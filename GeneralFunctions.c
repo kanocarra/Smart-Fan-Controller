@@ -1,5 +1,5 @@
 /*
- * General Functions.c 
+ * GeneralFunctions.c 
  * Hosts general functions not specific to a controller - includes watchdog timer for sleep states
  *
  * Created: 1/10/2016 12:19:00 p.m.
