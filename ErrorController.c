@@ -63,11 +63,11 @@ uint8_t checkBlockDuct(float speed){
 	}else if( speed > 700 && speed <= 800){
 		return ((pwmController.dutyCycle*100.0) > (1.05 * expectedDutyCyclelinear));
 	
-	}else if (speed > 800 && speed <= 1250){
+	}else if (speed > 800 && speed <= 1000){
 
 		return ((pwmController.dutyCycle*100.0) > (1.1 * expectedDutyCyclelinear));
 
-	}else if(speed > 1250 && speed <= 1550){
+	}else if(speed > 100 && speed <= 1550){
 
 		return ((pwmController.dutyCycle*100.0) > (1.13 * expectedDutyCyclelinear));
 
