@@ -95,7 +95,7 @@ void setDutyCycle(float gain);
 void initialiseSpeedController(void);
 
 // Calculate fan speed in rpm
-void pidController(void);
+void measureSpeed(void);
 
 // Calculate average fan speed in rpm
 void calculateAverageRpm(void);
@@ -104,7 +104,7 @@ void calculateAverageRpm(void);
 void sendSpeedRpm(float averageSpeed);
 
 // Set the new speed
-void setSpeed(void);
+void pidController(void);
 
 // Set a new requested speed
 void setRequestedSpeed(uint16_t speed);
