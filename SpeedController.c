@@ -20,11 +20,12 @@
 	} else {
 		count = 0;
 	}
-
+	
+	//
 	speedControl.timerCount = ICR1 -count;
-	// speedControl.timerCount = ICR1;
+	
 	 speedControl.sampleCounter += speedControl.timerCount;
-	 pidController();
+	 measureSpeed();
 	 ICR1 = 0;
 	 TCNT1 =  count;
 	
@@ -48,6 +49,7 @@
 	 //Start timer with prescaler 64
 	 TCCR1B |= (1<<CS11) | (1<<CS10);
 
+	 //Clear Error  
 	 speedControl.sampleTime = 0;
 	 speedControl.lastError = 0;
 	 speedControl.lastSpeed = 0;
@@ -55,24 +57,29 @@
 	 speedControl.lockedRotorDection = 0;
  }
 
- void pidController(void){
-
+ void measureSpeed(void){
+	
+	//Calculate mechanical frequency 
 	float mechanicalFrequency = (uint8_t)((F_CPU/speedControl.prescaler)/speedControl.timerCount);
+	//Current speed
 	speedControl.currentSpeed = ((mechanicalFrequency * 60)/3);
 	
 	uint8_t sampleSize = 10;
 	
+	//Calculate sample time every 10 samples 
 	 if(speedControl.currentIndex < sampleSize) {
 		 speedControl.currentIndex++;
 	 } else {
 		 speedControl.currentIndex = 0;
 		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/speedControl.prescaler);
-		 setSpeed();
+		 pidController();
 		 speedControl.sampleCounter = 0;
 	}
  }
 
- void setSpeed(void){
+ void pidController(void){
+
+	 //PID Constants
 	 float kP = 0.0625;
 	 float kI = 0.003;
 	 float kD = 0.08;
@@ -80,11 +87,18 @@
 	 float output;
 
 	 //Max PWM Output
-	 double Max = 150;
+	 double Max = 255;
 	 double Min = 0;
-	
+
+	 //Error
 	 float error = speedControl.requestedSpeed - speedControl.currentSpeed;
-		
+	 
+	 //Differential Error
+	 float diffError =  (speedControl.currentSpeed - speedControl.lastSpeed)/speedControl.sampleTime;
+	 
+	 //Integral SumError
+	 speedControl.errorSum = (speedControl.errorSum + error) * speedControl.sampleTime;
+		 		
 	//If is within target speed, check for blocked duct
 	if(error < 200 && error > -200) {
 		// Checks that it is calibrated
@@ -92,7 +106,7 @@
 			if(checkBlockDuct(speedControl.currentSpeed)){
 				if(!errorStatus == LOCKED){
 					speedControl.blockedCount++;
-					if(speedControl.blockedCount > (speedControl.currentSpeed/30)){
+					if(speedControl.blockedCount > (speedControl.currentSpeed/20)){
 						errorStatus = BLOCKED;
 						speedControl.blockedCount = 0;
 					}
@@ -102,36 +116,34 @@
 			}
 		}
 	}
-	 
+	
 	 // If error is too large, reduce step size
 	 if(error < -700){
 		 error = -200;
 	 }
 	 
-	 speedControl.errorSum = (speedControl.errorSum + error) * speedControl.sampleTime;
-
 	 //clamp the integral term between 0 and 400 to prevent integral windup
-	 if(speedControl.errorSum > Max) {
+	 if(speedControl.errorSum > Max) {    
 		 speedControl.errorSum = Max;
 	 } else if(speedControl.errorSum < Min) {
 		 speedControl.errorSum = Min;
 	 }
 
-	 output = kP * error + (kI * speedControl.errorSum) - (kD * (speedControl.currentSpeed - speedControl.lastSpeed)/speedControl.sampleTime); 
+	 //Compute PID gain
+	 output = (kP * error) + (kI * speedControl.errorSum) - (kD *diffError) ; 
 	 
-	 //clamp the outputs between 0 and 400 to prevent windup
-	 //if(output> max) output = max;
-	 //else if(output < min) output = min;
-
+	 //Save the last variables for next computation
 	 speedControl.lastError = error;
 	 speedControl.lastSpeed = speedControl.currentSpeed;
 
+	 //Output proportional gain on the dutyCycle to adjust speed
 	 proportionalGain = speedControl.requestedSpeed/(speedControl.requestedSpeed - output);
 	 setDutyCycle(proportionalGain);
 	 
  }
 
  void setRequestedSpeed(uint16_t speed){
+
 	// Changes requested speed
 	speedControl.requestedSpeed = speed;
 	speedControl.blockedCount = 0;

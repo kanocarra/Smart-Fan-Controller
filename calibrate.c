@@ -56,7 +56,7 @@ void intialiseBlockedDuct(){
 
 uint8_t checkBlockDuct(float speed){
 
-	//polynomial cal
+	//polynomial calcultions
 	float a = 3.0 * (pow(10, -12.0));
 	float b = -2.0 * (pow(10, -8.0));
 	float c = 3.0 * (pow(10, -5.0));
@@ -68,8 +68,7 @@ uint8_t checkBlockDuct(float speed){
 	
 	//linear calculations 
 	float expectedDutyCyclelinear = 0.0254*(speed) + 7.6481;
-
-		
+	
 	if(speed < 350){
 		
 		return ((pwmController.dutyCycle*100.0) > (1.01*expectedDutyCycle));
@@ -97,6 +96,7 @@ uint8_t checkBlockDuct(float speed){
 
  void intialiseLockedRotor(void){
 	 
+	 //Locked rotor if speed is below
 	 float cutoffRMP = 100;
 
 	 speedControl.lockedRotorCount =  65535-(uint16_t)(F_CPU/((cutoffRMP*3.0/60.0) * speedControl.prescaler));
