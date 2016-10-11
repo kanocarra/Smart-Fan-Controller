@@ -184,8 +184,8 @@ State start(){
 	sei();
 	
 	// If pin 5 is a larger speed, it is the correct way
-	if(speedPin5 > speedPin3) {
-		pwmPin = TOCC5OE;
+	if(speedPin3 > speedPin5) {
+		pwmPin = TOCC3OE;
 	}
 	
 	// Start the fan with correct start pin

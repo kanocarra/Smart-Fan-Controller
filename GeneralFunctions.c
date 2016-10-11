@@ -15,15 +15,6 @@
 #define F_PWM 18000UL
 #include "prototypes.h"
 
-// If the watchdog timer wakes-up the micro-controller
-ISR(WDT_vect) {
-	if(communicationsController.transmissionStart) {
-		errorStatus = NONE;
-		} else {
-		errorStatus = LOCKED;
-	}
-}
-
 void initialiseWatchDogTimer(void){
 	
 	//Clear watchdog flag
