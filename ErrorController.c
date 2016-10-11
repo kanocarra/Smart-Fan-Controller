@@ -1,9 +1,12 @@
 /*
- * calibrate.c
+ * ErrorController.c 
+ * Controller for the locked fan and blocked duct error states
  *
  * Created: 1/10/2016 12:19:00 p.m.
- *  Author: emel269
+ * ELECTENG 311 Smart Fan Project
+ * Group 10
  */ 
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
@@ -32,15 +35,6 @@ extern struct CommunicationsController communicationsController;
 	
 	// Stop timer 1
 	TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
- }
- 
- // If the watchdog timer wake-up the microcontroller
- ISR(WDT_vect) {
-	 if(communicationsController.transmissionStart) {
-		errorStatus = NONE;
-	 } else {
-		errorStatus = LOCKED;
-	 }
  }
 
 uint8_t checkBlockDuct(float speed){

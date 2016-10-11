@@ -1,8 +1,10 @@
 /*
- * GeneralFunctions.c
+ * General Functions.c 
+ * Hosts general functions not specific to a controller - includes watchdog timer for sleep states
  *
- * Created: 9/10/2016 11:10:20 PM
- *  Author: kanocarra
+ * Created: 1/10/2016 12:19:00 p.m.
+ * ELECTENG 311 Smart Fan Project
+ * Group 10
  */ 
 
 #include <avr/io.h>
@@ -13,8 +15,15 @@
 #define F_PWM 18000UL
 #include "prototypes.h"
 
+// If the watchdog timer wakes-up the micro-controller
+ISR(WDT_vect) {
+	if(communicationsController.transmissionStart) {
+		errorStatus = NONE;
+		} else {
+		errorStatus = LOCKED;
+	}
+}
 
-// Initialize the watchdog timer
 void initialiseWatchDogTimer(void){
 	
 	//Clear watchdog flag
@@ -33,9 +42,9 @@ void initialiseWatchDogTimer(void){
 
 }
 
-// Watchdog timer clear at the beginning of the program
 void wdt_init(void)
 {
+	// Watchdog timer clear and disable at the beginning of the program
 	MCUSR = 0;
 	wdt_disable();
 	return;

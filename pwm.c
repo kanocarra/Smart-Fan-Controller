@@ -1,9 +1,12 @@
 /*
- * pwm.c
+ * PwmController.c 
+ * Controller for PWM control of the fan
  *
  * Created: 5/09/2016 4:15:28 p.m.
- *  Author: emel269
+ * ELECTENG 311 Smart Fan Project
+ * Group 10
  */ 
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>

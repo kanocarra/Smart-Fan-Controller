@@ -1,9 +1,11 @@
 /*
- * state.h
+ *state.h
+ * Header for the main controller with the states
  *
- * Created: 29/08/2016 5:35:09 p.m.
- *  Author: thar729
- */ 
+ * Created: 5/09/2016 10:47:00 a.m.
+ * ELECTENG 311 Smart Fan Project
+ * Group 10
+ */
 
 #ifndef STATE_H_
 #define STATE_H_
@@ -19,6 +21,4 @@ State controlSpeed();
 State fanLocked();
 State blockedDuct();
 State sleep();
-State calculatePower();
-
 #endif /* STATE_H_ */

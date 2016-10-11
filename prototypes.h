@@ -1,8 +1,10 @@
 /*
- * smart_fan_prototypes.h
+ * prototypes.h
+ * Headers for all functions and controllers 
  *
  * Created: 5/09/2016 10:47:00 a.m.
- *  Author: emel269
+ * ELECTENG 311 Smart Fan Project
+ * Group 10
  */ 
 
 
@@ -86,7 +88,7 @@ void setDutyCycle(float gain);
  void stopFan(void);
 
 
-/************************* FAN SPEED CONTROL ************************/
+/************************* SPEED CONTROLLER ************************/
 /*******************************************************************/
 
 // Initialize timer to measure fan speed
@@ -108,7 +110,7 @@ void setSpeed(void);
 void setRequestedSpeed(uint16_t speed);
 
 
-/******************** POWER CONSUMPTION MEASUREMENT *****************/
+/******************** POWER CONTROLLER *****************/
 /*******************************************************************/
 
 // Initialiase Analog to digital converter
@@ -154,9 +156,6 @@ void disableReceiver(void);
 // Enable receiver and receive interrupt
 void enableReceiver(void);
 
-//Enables the transmitter
-void enableTransmitter(void);
-
 // Converts speed into packet for comms protocol
 void convertToPacket(uint16_t speed);
 
@@ -173,7 +172,7 @@ void enableStartFrameDetection(void);
 void USART_Flush( void );
 
 
-/**************************** ERROR CONTROLLER ************************/
+/**************************** ERROR CONTROLLER *************************/
 /**********************************************************************/
 
 //Check if the duct is blocked
@@ -183,7 +182,7 @@ void USART_Flush( void );
  void intialiseLockedRotor(void);
  
 
-/**************************** GENERAL FNCTIONS ************************/
+/**************************** GENERAL FUNCTIONS ************************/
 /**********************************************************************/
  
  // Initialises the watch dog timer
@@ -192,7 +191,5 @@ void USART_Flush( void );
 // Makes sure wacthdog doesn't constantly reset program
  void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
 
-// Turns off watch dog timer
- void turnOffWatchDogTimer(void);
 
 #endif /* PROTOTYPES_H_ */

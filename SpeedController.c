@@ -1,9 +1,12 @@
 /*
- * speed.c
+ * SpeedController.c 
+ * Controller for speed of the fan - including the PID controller and the measurement of speed
  *
- * Created: 5/09/2016 5:34:01 p.m.
- *  Author: emel269
+ *  Created: 5/09/2016 5:34:01 p.m.
+ * ELECTENG 311 Smart Fan Project
+ * Group 10
  */ 
+
  #include <avr/io.h>
  #include <avr/interrupt.h>
  #include <stdio.h>
