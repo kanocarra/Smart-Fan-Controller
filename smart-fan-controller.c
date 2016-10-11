@@ -26,7 +26,7 @@ enum Errors errorStatus = NONE;
 
 int main(void)	
 {	
-
+	// Put microcontroller into sleep state on start up
 	State currentState = sleep;
 	errorStatus = NONE;
 	speedControl.currentSpeed = 0;
@@ -36,9 +36,11 @@ int main(void)
 	powerController.averagePower = 0;
 	speedControl.isCalibrated = 0;
 	
+	// Initialise communications
 	initialiseUART();
 	enableStartFrameDetection();
-
+	
+	// If fan is still locked
 	if(errorStatus == LOCKED){
 		currentState = fanLocked;
 	}
@@ -51,6 +53,7 @@ int main(void)
 }
 
 State idle() {
+	// If communications are finished then go into receive data state
 	if(communicationsController.transmissionComplete) {
 		return (State)receiveData;
 	} else {
@@ -140,56 +143,55 @@ State receiveData(){
 
 State start(){
 	
+	//Set starting pin to 5
 	uint8_t pwmPin = TOCC5OE;
 	
-	// Initialise PWM with given duty cycle and frequency
+	//Start fan with pin 5
 	initialisePwmController(0.6, pwmPin);
-	
-	// Initialise the speed control
 	initialiseSpeedController();
 	
 	_delay_ms(1000);
 	
-	uint16_t speedPin3 = speedControl.currentSpeed;
-	
-	cli();
-	
-	stopFan();
-	
-	_delay_ms(1000);
-	
-	sei();
-	pwmPin = TOCC3OE;
-	
-	initialisePwmController(0.6, pwmPin);
-	
-	// Initialise the speed control
-	initialiseSpeedController();
-	
-	_delay_ms(1000);
-	
+	// Calclate speed for pin 5
 	uint16_t speedPin5 = speedControl.currentSpeed;
 	
+	// Stop the fan
 	cli();
-		
 	stopFan();
-		
 	_delay_ms(1000);
-		
 	sei();
 	
-	if(speedPin3 > speedPin5) {
-		pwmPin = TOCC3OE;
-	}
+	//Change start pin to pin 3
+	pwmPin = TOCC3OE;
 	
+	// Start fan with pin 3 
 	initialisePwmController(0.6, pwmPin);
-		
-	// Initialise the speed control
 	initialiseSpeedController();
 	
 	_delay_ms(1000);
+	
+	// Calculate speed for pin 3
+	uint16_t speedPin3 = speedControl.currentSpeed;
+	
+	// Stop the fan
+	cli();		
+	stopFan();		
+	_delay_ms(1000);
+	sei();
+	
+	// If pin 5 is a larger speed, it is the correct way
+	if(speedPin5 > speedPin3) {
+		pwmPin = TOCC5OE;
+	}
+	
+	// Start the fan with correct start pin
+	initialisePwmController(0.6, pwmPin);
+	initialiseSpeedController();
+	
+	_delay_ms(1000);
+	
 	//Initialise the locked and blocked detection
-	intialiseBlockedDuct();
+	speedControl.isCalibrated = 1;
 	intialiseLockedRotor();
 	
 	return (State)controlSpeed;
@@ -199,6 +201,7 @@ State changeDirection(){
 	return (State)changeDirection;
 }
 
+// Main controller that changes state based on error and communication status
 State controlSpeed(){
 	
 	if(errorStatus == LOCKED) {
@@ -231,7 +234,7 @@ State fanLocked(){
 	enableStartFrameDetection();
 	initialiseWatchDogTimer();
 	
-	// If a new transmission has been started
+	// If a new transmission has been started then go into idle
 	if(communicationsController.transmissionStart == 1){
 		return (State)idle;
 	}
@@ -259,11 +262,11 @@ State blockedDuct(){
 
 State sleep(){
 	
-	// Put micro into power down sleep
+	// Put micro into power down sleep and disable interrupts
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
 	cli();
 	
-	// If a tranmission has not started
+	// If a tranmission has not started put micro to sleep
 	if (!communicationsController.transmissionStart) {
 		sleep_enable();
 		sei();

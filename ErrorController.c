@@ -18,20 +18,23 @@ extern struct CommunicationsController communicationsController;
   
  ISR(TIMER1_OVF_vect){
 
-	 //Disable interrupt enable on Hall effect
-	 ACSR0A &= ~(1<<ACIE0);
-
+	//Disable interrupt enable on Hall effect
+	ACSR0A &= ~(1<<ACIE0);
+	
+	// Set error status to locked
 	errorStatus = LOCKED;
 	
-	 //Disable PWM Channel on TOCC3
-	 TOCPMCOE &= ~(1<<TOCC3OE);
-	 //Disable PWM Channel on TOCC5
-	 TOCPMCOE &= ~(1<<TOCC5OE);
-	 // Stop timer 1
-	 TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
-
+	//Disable PWM Channel on TOCC3
+	TOCPMCOE &= ~(1<<TOCC3OE);
+	
+	//Disable PWM Channel on TOCC5
+	TOCPMCOE &= ~(1<<TOCC5OE);
+	
+	// Stop timer 1
+	TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
  }
  
+ // If the watchdog timer wake-up the microcontroller
  ISR(WDT_vect) {
 	 if(communicationsController.transmissionStart) {
 		errorStatus = NONE;
@@ -39,15 +42,6 @@ extern struct CommunicationsController communicationsController;
 		errorStatus = LOCKED;
 	 }
  }
-
-void intialiseBlockedDuct(){
-	
-	unsigned int i;
-	unsigned int newRequestedSpeed;
-	disableReceiver();
-	speedControl.isCalibrated = 1;
-	enableReceiver();
-}
 
 uint8_t checkBlockDuct(float speed){
 
