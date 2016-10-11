@@ -1,8 +1,10 @@
 /*
- * communications.c
+ * CommunicationsController.c 
+ * Controller for all communications with the master control
  *
  * Created: 5/09/2016 10:32:14 a.m.
- *  Author: emel269
+ * ELECTENG 311 Smart Fan Project
+ * Group 10
  */ 
 
   #define BAUD 9600UL
@@ -20,7 +22,7 @@
  #define FAN_ID 2
  #define SW_VERSION 1.1
  #define END_PACKET 10
-  #define R 82
+ #define R 82
  #define SPEED_REQUEST 83
  #define STATUS_REQUEST 63
  #define CR 13
@@ -43,13 +45,17 @@
   enum ByteReceived commStatus = SOURCE_ID;
   
 ISR(USART0_RX_vect){
+	//Read received data
 	uint8_t rX_data = UDR0;
 	switch (communicationsController.index) {
+		
+		// Read the source ID
 		case SOURCE_ID:	
 			communicationsController.sourceId = rX_data - TO_ASCII;
 			communicationsController.index++;
 			break;
-
+			
+		// Read the destination ID
 		case DEST_ID:
 			communicationsController.destinationId = rX_data - TO_ASCII;
 			// Checks that the message is addressed to the smart fan otherwise ignores the packet
@@ -60,7 +66,6 @@ ISR(USART0_RX_vect){
 				communicationsController.destinationId = 0;
 			}
 			break;
-
 		case MESSAGE_ID:
 			// Stores the message ID
 			communicationsController.messageId = rX_data;	
@@ -99,7 +104,9 @@ ISR(USART0_RX_vect){
 			break;
 		
 		case LF:
+			// Get end of packet character 
 			if(rX_data == END_PACKET || rX_data == CR) {
+				// If speed requested
 				if(communicationsController.messageId == SPEED_REQUEST) {
 					communicationsController.requestedSpeed = communicationsController.speedValues[0] * 1000 
 															+ communicationsController.speedValues[1] * 100 
@@ -121,6 +128,7 @@ ISR(USART0_RX_vect){
 			break;
 		
 		default:
+			// If an extra character comes in, reset everything
 			communicationsController.index = 0;
 			communicationsController.speedIndex = 0;
 			communicationsController.destinationId = 0;
@@ -129,16 +137,18 @@ ISR(USART0_RX_vect){
 
 
 ISR(USART0_START_vect){
-		
+	
+	// If error status was locked
 	if(errorStatus == LOCKED){
 		errorStatus = NONE;
 		//Turn off watchdog timer
 		WDTCSR &= ~(WDTCSR);
 		wdt_enable(WDTO_15MS);
-		//Wait for watchdog to put device to sleep
+		//Wait for watchdog to reset device
 		while(1);
 	}
-
+	
+	// Indicate transmission start
 	communicationsController.transmissionStart = 1;
 	errorStatus = NONE;
 
@@ -149,6 +159,7 @@ ISR(USART0_START_vect){
 
 void initialiseUART()
 {	
+	//Clear all registers
 	UCSR0B &= ~(UCSR0B);
 	UCSR0C &= ~(UCSR0C);
 	UBRR0 &= ~(UBRR0);
@@ -182,50 +193,6 @@ void enableStartFrameDetection(void) {
 	 UCSR0D |= (1<<SFDE0) | (1<<RXSIE0);
 }
 
-
-void TransmitUART(uint8_t TX_data)
-{	
-	while(!(UCSR0A & (1<<UDRE0)));
-	
-	// Since UDR is empty put the data we want to send into it,
-	// then wait for a second and send the following data
-	UDR0 = TX_data;
-
-	//Wait until transmit complete
-	while(!(UCSR0A & (1<<TXC0)));
-}
-
-void sendStatusReport(uint16_t requestedSpeed, float currentSpeed, float power, uint8_t error) {
-	communicationsController.sendPacket[SOURCE_ID] = FAN_ID + TO_ASCII;
-	communicationsController.sendPacket[DEST_ID] = (communicationsController.sourceId) + TO_ASCII;
-	communicationsController.sendPacket[MESSAGE_ID] = R;
-	communicationsController.sendPacketIndex = DATA0;
-	convertDecimal(SW_VERSION);
-	
-	convertToPacket(requestedSpeed);
-	convertToPacket((uint16_t)currentSpeed);
-	convertDecimal(power);
-	
-	if(error == NONE){
-		communicationsController.sendPacket[communicationsController.sendPacketIndex] = '-';
-	} else if(error == LOCKED){
-		communicationsController.sendPacket[communicationsController.sendPacketIndex] = 'L';
-	} else if (error == BLOCKED){
-		communicationsController.sendPacket[communicationsController.sendPacketIndex] = 'B';
-	}
-	
-	communicationsController.sendPacketIndex++;
-	
-	communicationsController.sendPacket[communicationsController.sendPacketIndex] = END_PACKET;
-	int i = 0;
-	while(i <= communicationsController.sendPacketIndex){
-		TransmitUART(communicationsController.sendPacket[i]);
-		i++;
-	}
-	communicationsController.sendPacketIndex = 0;
-	
-}
-
 void disableReceiver(void){
 	// Disable UART receive interrupt
 	UCSR0B &= ~(1<<RXCIE0) & ~(1<<RXEN0);
@@ -236,10 +203,71 @@ void enableReceiver(void) {
 	UCSR0B |= (1<<RXCIE0) | (1<<RXEN0);
 }
 
+void TransmitUART(uint8_t TX_data)
+{	
+	// Wait for data register to be empty
+	while(!(UCSR0A & (1<<UDRE0)));
+	
+	// Transmit the given data
+	UDR0 = TX_data;
+
+	//Wait until transmit complete
+	while(!(UCSR0A & (1<<TXC0)));
+}
+
+// Flushes the data register
+void USART_Flush( void )
+{
+	unsigned char data;
+	while ( UCSR0A & (1<<RXC0) ) data = UDR0;
+}
+
+void sendStatusReport(uint16_t requestedSpeed, float currentSpeed, float power, uint8_t error) {
+	// Puts header values into the send packet (source id, destination ID and message ID)
+	communicationsController.sendPacket[SOURCE_ID] = FAN_ID + TO_ASCII;
+	communicationsController.sendPacket[DEST_ID] = (communicationsController.sourceId) + TO_ASCII;
+	communicationsController.sendPacket[MESSAGE_ID] = R;
+	communicationsController.sendPacketIndex = DATA0;
+	
+	// Put software version into the header
+	convertDecimal(SW_VERSION);
+	
+	// Put requested and current speed into send packet
+	convertToPacket(requestedSpeed);
+	convertToPacket((uint16_t)currentSpeed);
+	
+	//Put power usage into send packet
+	convertDecimal(power);
+	
+	// Put in the error status
+	if(error == NONE){
+		communicationsController.sendPacket[communicationsController.sendPacketIndex] = '-';
+	} else if(error == LOCKED){
+		communicationsController.sendPacket[communicationsController.sendPacketIndex] = 'L';
+	} else if (error == BLOCKED){
+		communicationsController.sendPacket[communicationsController.sendPacketIndex] = 'B';
+	}
+	
+	communicationsController.sendPacketIndex++;
+	
+	// Put end packet character
+	communicationsController.sendPacket[communicationsController.sendPacketIndex] = END_PACKET;
+	
+	//Send the whole packet over UART
+	int i = 0;
+	while(i <= communicationsController.sendPacketIndex){
+		TransmitUART(communicationsController.sendPacket[i]);
+		i++;
+	}
+	communicationsController.sendPacketIndex = 0;
+	
+}
+
 void convertToPacket(uint16_t speed){
 	unsigned int factor = 10000;
 	unsigned int convertNumber = speed;
-
+	
+	// Split the number into individual digits for sending
 	while(factor>10){
 		factor = factor/10;
 		communicationsController.sendPacket[communicationsController.sendPacketIndex] = (convertNumber/factor) + TO_ASCII;
@@ -252,23 +280,31 @@ void convertDecimal(float number){
 	uint8_t decimal;
 	uint8_t interger;
 	uint8_t factor = 100;
-	if(number == 0) {
+	
+	// Round to the nearest 2 decimal place
+	float roundedNumber = roundf(number * 100) / 100;
+	
+	if(roundedNumber <= 0) {
 		communicationsController.sendPacket[communicationsController.sendPacketIndex] = '-';
 		communicationsController.sendPacketIndex++;	
 		return;	
 	}
-	// Round to the nearest 2 decimal place
-	float roundedNumber = roundf(number * 100) / 100; 
 	
+	// Get the integer part
 	interger = (uint8_t)(roundedNumber);
+	
+	//Get the decimal part
 	decimal = (100.0) * (roundedNumber - interger);
 	
+	// Put the integer part into the packet
 	communicationsController.sendPacket[communicationsController.sendPacketIndex] = interger + TO_ASCII;
 	communicationsController.sendPacketIndex++;
 	
+	// Put a decimal point
 	communicationsController.sendPacket[communicationsController.sendPacketIndex] = '.';
 	communicationsController.sendPacketIndex++;
 	
+	// Split decimal into digits for the send packet
 	while(factor>10){
 		factor = factor/10;
 		communicationsController.sendPacket[communicationsController.sendPacketIndex] = (decimal/factor) + TO_ASCII;
@@ -279,28 +315,25 @@ void convertDecimal(float number){
 }
 
 void sendError(char errorType){
+	// Puts header values into the send packet (source id, destination ID)
 	communicationsController.sendPacket[SOURCE_ID] = FAN_ID + TO_ASCII;
 	communicationsController.sendPacket[DEST_ID] = 0 + TO_ASCII;
+	
+	// Puts the error into the packet
 	communicationsController.sendPacket[MESSAGE_ID] = (uint8_t)errorType;
+	
+	// Adds end packet character 
 	communicationsController.sendPacket[3] = END_PACKET;
+	
+	// Send the packet
 	int i = 0;
 	while(i < 4){
 		TransmitUART(communicationsController.sendPacket[i]);
 		i++;
 	}
-	//communicationsController.errorSent = 1;
 }
 
-// Flushes the data register
-void USART_Flush( void )
-{
-	unsigned char data;
-	while ( UCSR0A & (1<<RXC0) ) data = UDR0;
-}
-
-
-// Send functions for testing purposes
-
+// Send functions for testing and calibration purposes
 void sendSpeedRpm(float averageSpeed){
 	uint8_t tx_data = (uint8_t)(averageSpeed/10.0);
 	TransmitUART(tx_data);

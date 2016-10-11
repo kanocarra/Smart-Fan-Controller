@@ -1,8 +1,10 @@
 /*
- * power.c
+ * PowerController.c 
+ * Controller for power calculations
  *
  * Created: 5/09/2016 6:03:52 p.m.
- *  Author: emel269
+ * ELECTENG 311 Smart Fan Project
+ * Group 10
  */ 
 
  #include <avr/io.h>
@@ -30,84 +32,90 @@
 
  enum Parameters calculatedParameter;
 
-//Interrupts 
+// Interrupt for on the PWM rise/fall
 ISR(TIMER2_COMPB_vect){
 	
+	// Keep storing values for 21 samples
 	if(powerController.cycles < 21){
 		// Enable ADC interrupt
 		ADCSRA |= (1<<ADIE);
 		ADCSRA |= (1<<ADSC);
 		powerController.cycles++;
-	} else {
 		
+	} else {
+		// Work out current and voltage values based on the calculated parameter
 		switch (calculatedParameter){
 			
-			case 0: 
-			calcRMScurrent();
-			switchChannel(calculatedParameter);
-			calculatedParameter = VOLTAGE;
-			break;
+			case CURRENT: 
+				calcRMScurrent();
+				switchChannel(calculatedParameter);
+				calculatedParameter = VOLTAGE;
+				break;
 
-			case 1:
-			calcRMSvoltage();
-			switchChannel(calculatedParameter);
-			calcAveragePower();
-			calculatedParameter = CURRENT;
-			//Disable ADC Interrupt
-			ADCSRA &= ~(1<<ADIE);
-			//Stop ADC
-			ADCSRA &= ~(1<<ADSC);
-			//Disable Timer2 Output Compare Interrupt
-			TIMSK2 &= ~(1<<OCIE2B);
-			PRR &= ~(1<<PRADC);
-			//Clear Registers
-			ADCSRA &= ~(ADCSRA);
-			ADCSRB &= ~(ADCSRB);
-			ADMUXA &= ~(ADMUXA);
-			ADMUXB &= ~(ADMUXB);
-			DIDR1 &= ~(DIDR1);
-			break;
+			case VOLTAGE:
+				calcRMSvoltage();
+				switchChannel(calculatedParameter);
+				calcAveragePower();
+				calculatedParameter = CURRENT;
+				//Disable ADC Interrupt
+				ADCSRA &= ~(1<<ADIE);
+				//Stop ADC
+				ADCSRA &= ~(1<<ADSC);
+
+				//Clear Registers
+				ADCSRB &= ~(ADCSRB);
+				ADMUXA &= ~(ADMUXA);
+				ADMUXB &= ~(ADMUXB);
+				DIDR1 &= ~(DIDR1);
+				PRR &= ~(1<<PRADC);
+			
+				//Disable Timer2 Output Compare Interrupt
+				TIMSK2 &= ~(1<<OCIE2B);
+				break;
 
 		}
 		powerController.numConversions = 0.0;
 		powerController.cycles = 0.0;
 	}
-
 }
 
+// Interrupt for ADC conversion complete
 ISR(ADC_vect){
-
+	
+	// Stores ADC readings 
 	switch(calculatedParameter){
 		
+		// Reads in current, converts to a value in amps, computes square and adds to the RMS sum 
 		case CURRENT:
-		powerController.current = CALIBRATION_FACTOR * ((float)(ADC) * (V_REF/ADC_RESOLUTION))/R_SHUNT;
-		powerController.sqCurrentSum = powerController.sqCurrentSum + pow(powerController.current, 2.0);
-		powerController.numConversions++;
-		powerController.pulseSample++;
-		if(powerController.pulseSample == 3){
-			//Disable ADC interrupt
-			ADCSRA &= ~(1<<ADIE);
-			//Stop ADC
-			ADCSRA &= ~(1<<ADSC);
-			//Reset the number of pulse samples back to 0
-			powerController.pulseSample = 0;
-		}
+			powerController.current = CALIBRATION_FACTOR * ((float)(ADC) * (V_REF/ADC_RESOLUTION))/R_SHUNT;
+			powerController.sqCurrentSum = powerController.sqCurrentSum + pow(powerController.current, 2.0);
+			powerController.numConversions++;
+			powerController.pulseSample++;
+			if(powerController.pulseSample == 3){
+				//Disable ADC interrupt
+				ADCSRA &= ~(1<<ADIE);
+				//Stop ADC
+				ADCSRA &= ~(1<<ADSC);
+				//Reset the number of pulse samples back to 0
+				powerController.pulseSample = 0;
+			}
 		break;
-
+		
+		// Reads in voltage, converts to a value in volts, computes square and adds to the RMS sum 
 		case VOLTAGE:
-		//calculate original voltage
-		powerController.voltage = GAIN * ((float)(ADC) * (V_REF/ADC_RESOLUTION));
-		powerController.sqVoltageSum = powerController.sqVoltageSum + pow(powerController.voltage, 2.0);
-		powerController.numConversions++;
-		powerController.pulseSample++;
-		if(powerController.pulseSample == 3){
-			//Disable ADC interrupt
-			ADCSRA &= ~(1<<ADIE);
-			//Stop ADC
-			ADCSRA &= ~(1<<ADSC);
-			//Reset the number of pulse samples back to 0
-			powerController.pulseSample = 0;
-		}
+			//calculate original voltage
+			powerController.voltage = GAIN * ((float)(ADC) * (V_REF/ADC_RESOLUTION));
+			powerController.sqVoltageSum = powerController.sqVoltageSum + pow(powerController.voltage, 2.0);
+			powerController.numConversions++;
+			powerController.pulseSample++;
+			if(powerController.pulseSample == 3){
+				//Disable ADC interrupt
+				ADCSRA &= ~(1<<ADIE);
+				//Stop ADC
+				ADCSRA &= ~(1<<ADSC);
+				//Reset the number of pulse samples back to 0
+				powerController.pulseSample = 0;
+			}
 		break;
 	}
 
@@ -155,23 +163,24 @@ ISR(ADC_vect){
 
 void switchChannel(int currentChannel){
 	
+	//If on the current channel then switch to voltage and vice versa
 	switch(currentChannel){
 		
 		//Switch to voltage sense channel
-		case 0:
-		//Gain Selection (Gain of 1)
-		ADMUXB &= ~(1<<GSEL0);
-		//Change ADC Channel
-		ADMUXA = ADC_V_CHANNEL;
-		break;
+		case CURRENT:
+			//Gain Selection (Gain of 1)
+			ADMUXB &= ~(1<<GSEL0);
+			//Change ADC Channel
+			ADMUXA = ADC_V_CHANNEL;
+			break;
 
 		//Switch to current sense channel
-		case 1:
-		//Gain Selection (Gain of 20)
-		ADMUXB |= (1<<GSEL0);
-		//Change ADC Channel
-		ADMUXA = ADC_I_CHANNEL;
-		break;
+		case VOLTAGE:
+			//Gain Selection (Gain of 20)
+			ADMUXB |= (1<<GSEL0);
+			//Change ADC Channel
+			ADMUXA = ADC_I_CHANNEL;
+			break;
 	}
 
  }
@@ -179,18 +188,15 @@ void switchChannel(int currentChannel){
  void calcRMScurrent(void){
 	 powerController.RMScurrent = sqrt(powerController.sqCurrentSum/(float)powerController.numConversions);
 	 powerController.sqCurrentSum = 0.0;
-	 //sendCurrent(power.RMScurrent);
  }
 
  void calcRMSvoltage(void){
 
 	 powerController.RMSvoltage = sqrt(powerController.sqVoltageSum/(float)powerController.numConversions);
 	 powerController.sqVoltageSum = 0.0;
-	 //sendVoltage(power.RMSvoltage);
  }
 
  void calcAveragePower(void){
 	 powerController.averagePower = powerController.RMSvoltage * powerController.RMScurrent;
 	 powerController.ADCConversionComplete = 1;
-	 
  }

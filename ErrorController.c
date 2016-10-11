@@ -1,9 +1,12 @@
 /*
- * calibrate.c
+ * ErrorController.c 
+ * Controller for the locked fan and blocked duct error states
  *
  * Created: 1/10/2016 12:19:00 p.m.
- *  Author: emel269
+ * ELECTENG 311 Smart Fan Project
+ * Group 10
  */ 
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
@@ -18,41 +21,21 @@ extern struct CommunicationsController communicationsController;
   
  ISR(TIMER1_OVF_vect){
 
-	 //Disable interrupt enable on Hall effect
-	 ACSR0A &= ~(1<<ACIE0);
+	//Disable interrupt enable on Hall effect
+	ACSR0A &= ~(1<<ACIE0);
 	
-	if(errorStatus == BLOCKED) {
-		errorStatus == BOTH;
-	} else {
-		//Send error status
-		errorStatus = LOCKED;
-	}
-	 
-	 //Disable PWM Channel on TOCC3
-	 TOCPMCOE &= ~(1<<TOCC3OE);
-	 //Disable PWM Channel on TOCC5
-	 TOCPMCOE &= ~(1<<TOCC5OE);
-	 // Stop timer 1
-	 TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
-
- }
- 
- ISR(WDT_vect) {
-	 if(communicationsController.transmissionStart) {
-		errorStatus = NONE;
-	 } else {
-		errorStatus = LOCKED;
-	 }
- }
-
-void intialiseBlockedDuct(){
+	// Set error status to locked
+	errorStatus = LOCKED;
 	
-	unsigned int i;
-	unsigned int newRequestedSpeed;
-	disableReceiver();
-	speedControl.isCalibrated = 1;
-	enableReceiver();
-}
+	//Disable PWM Channel on TOCC3
+	TOCPMCOE &= ~(1<<TOCC3OE);
+	
+	//Disable PWM Channel on TOCC5
+	TOCPMCOE &= ~(1<<TOCC5OE);
+	
+	// Stop timer 1
+	TCCR1B &= ~(1<<CS12) & ~(1<<CS11) & ~(1<<CS10);
+ }
 
 uint8_t checkBlockDuct(float speed){
 

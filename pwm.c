@@ -1,9 +1,12 @@
 /*
- * pwm.c
+ * PwmController.c 
+ * Controller for PWM control of the fan
  *
  * Created: 5/09/2016 4:15:28 p.m.
- *  Author: emel269
+ * ELECTENG 311 Smart Fan Project
+ * Group 10
  */ 
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdio.h>
@@ -115,18 +118,22 @@ ISR(ANA_COMP0_vect)
 	 //set rising edge and input capture enable
 	 ACSR0A |= (1<<ACIS01) | (1<<ACIS00) | (1<<ACIC0);
 
-	 //initialise interrupt enable
+	 //initialise comparator interrupt enable
 	 ACSR0A |= (1<<ACIE0);
  }
 
  void setDutyCycle(float gain) {
+	 
+	 // Add the given gain to the PWM duty cycle
 	pwmController.dutyCycle = gain * pwmController.dutyCycle;
+	
+	// If duty cycle tries to go below 13%, then bound it to 13%
 	if(pwmController.dutyCycle < 0.13) {
 		pwmController.dutyCycle = 0.13;
 	}
 	
+	// Set the new top value for PWM
 	uint16_t compareCount = (uint16_t)roundf(pwmController.dutyCycle*(float)pwmController.top);
-	
 	OCR2A = compareCount;
 	OCR2B = compareCount;
  }
