@@ -75,7 +75,7 @@ struct CommunicationsController {
 // Initialises PWM with gien duty cycle
 void initialisePwmController(float dutyCycle, uint8_t pin);
 
-// Hall Effect sensor
+// Hall Effect sensor initialise
 void initialiseAnalogComparator(void);
 
 //PWM waveform generation

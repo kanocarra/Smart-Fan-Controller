@@ -27,7 +27,7 @@ ISR(WDT_vect) {
 		errorStatus = LOCKED;
 	}
 }
-  
+
  ISR(TIMER1_OVF_vect){
 
 	//Disable interrupt enable on Hall effect
