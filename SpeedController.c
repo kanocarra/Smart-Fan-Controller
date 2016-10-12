@@ -15,22 +15,29 @@
  #include "prototypes.h"
  struct SpeedController speedControl;
 
+ // Hall Effect rise and falling interrupt
  ISR(TIMER1_CAPT_vect){
 	uint16_t count;
 
+	// If locked rotor detection is on, the take the start count into account
 	if(speedControl.lockedRotorDection) {
 		count = speedControl.lockedRotorCount;
 	} else {
 		count = 0;
 	}
 	
-	//
+	// Calculate the time passed since last interrupt
 	speedControl.timerCount = ICR1 -count;
 	
-	 speedControl.sampleCounter += speedControl.timerCount;
-	 measureSpeed();
-	 ICR1 = 0;
-	 TCNT1 =  count;
+	// Increment the sample counter
+	speedControl.sampleCounter += speedControl.timerCount;
+	
+	// Measure the current speed
+	measureSpeed();
+
+	//Reset timer
+	ICR1 = 0;
+	TCNT1 =  count;
 	
 }
 
@@ -52,7 +59,7 @@
 	 //Start timer with prescaler 64
 	 TCCR1B |= (1<<CS11) | (1<<CS10);
 
-	 //Clear Error  
+	 //Clear Errors  
 	 speedControl.sampleTime = 0;
 	 speedControl.lastError = 0;
 	 speedControl.lastSpeed = 0;
@@ -62,20 +69,28 @@
 
  void measureSpeed(void){
 	
-	//Calculate mechanical frequency 
+	//Calculate mechanical frequency in Hz 
 	float mechanicalFrequency = (uint8_t)((F_CPU/speedControl.prescaler)/speedControl.timerCount);
-	//Current speed
-	speedControl.currentSpeed = ((mechanicalFrequency * 60)/3);
 	
+	//Current speed in RPM
+	speedControl.currentSpeed = ((mechanicalFrequency * 60.0)/3.0);
+
 	uint8_t sampleSize = 10;
 	
 	//Calculate sample time every 10 samples 
 	 if(speedControl.currentIndex < sampleSize) {
 		 speedControl.currentIndex++;
 	 } else {
+		// Reset the current index
 		 speedControl.currentIndex = 0;
+
+		 // Calculate time between samples
 		 speedControl.sampleTime = speedControl.sampleCounter/(F_CPU/speedControl.prescaler);
+
+		 //Run PID controller
 		 pidController();
+
+		 //Reset sample counter
 		 speedControl.sampleCounter = 0;
 	}
  }
@@ -109,7 +124,7 @@
 			if(checkBlockDuct(speedControl.currentSpeed)){
 				if(!errorStatus == LOCKED){
 					speedControl.blockedCount++;
-					if(speedControl.blockedCount > (speedControl.currentSpeed/20)){
+					if(speedControl.blockedCount > (speedControl.currentSpeed/30)){
 						errorStatus = BLOCKED;
 						speedControl.blockedCount = 0;
 					}
@@ -146,7 +161,14 @@
  }
 
  void setRequestedSpeed(uint16_t speed){
-
+	
+	//Bound speed between 300 and 2700 rpm
+	if(speed < 300 ){
+		speed = 300;
+	}else if(speed > 2700){
+		speed = 2700;
+	}
+	
 	// Changes requested speed
 	speedControl.requestedSpeed = speed;
 	speedControl.blockedCount = 0;

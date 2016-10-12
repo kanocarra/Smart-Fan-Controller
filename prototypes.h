@@ -11,6 +11,7 @@
 #ifndef PROTOTYPES_H_
 #define PROTOTYPES_H_
 
+// Error states
 enum Errors {
 	NONE,
 	LOCKED,
@@ -19,11 +20,13 @@ enum Errors {
 
 enum Errors errorStatus;
 
+//Model for PWM controller
 struct PwmController {
 	float dutyCycle;
 	uint16_t top;
 };
 
+//Model for speed controller
 struct SpeedController{
 	uint16_t requestedSpeed;
 	float currentSpeed;
@@ -41,6 +44,7 @@ struct SpeedController{
 	uint8_t blockedCount;
 };
 
+//Model for power controller
 struct PowerController{
 	float current;
 	float voltage;
@@ -55,6 +59,7 @@ struct PowerController{
 	uint16_t cycles;
 };
 
+//Model for communications controller
 struct CommunicationsController {
 	uint8_t index;
 	uint8_t sourceId;
@@ -69,7 +74,7 @@ struct CommunicationsController {
 	uint8_t transmissionStart;
 };
 
-/*************************** PWM GENERATION **************************/
+/*************************** PWM CONTROLLER **************************/
 /********************************************************************/
 
 // Initialises PWM with gien duty cycle
@@ -110,7 +115,7 @@ void pidController(void);
 void setRequestedSpeed(uint16_t speed);
 
 
-/******************** POWER CONTROLLER *****************/
+/************************** POWER CONTROLLER ***********************/
 /*******************************************************************/
 
 // Initialiase Analog to digital converter
@@ -138,7 +143,7 @@ void sendVoltage(float RMSvoltage);
 void sendPower(float averagePower);
 
 
-/**************************** COMMUNICATIONS CONTROLLER *************/
+/********************** COMMUNICATIONS CONTROLLER ******************/
 /*******************************************************************/
 
 // Initialising UART 
