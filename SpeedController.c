@@ -163,9 +163,9 @@
  void setRequestedSpeed(uint16_t speed){
 	
 	//Bound speed between 300 and 2700 rpm
-	if(speed < 300 ){
+	if(speed < 300 && speed != 0){
 		speed = 300;
-	}else if(speed > 2700){
+	} else if(speed > 2700){
 		speed = 2700;
 	}
 	
